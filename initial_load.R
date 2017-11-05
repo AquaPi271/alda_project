@@ -3,6 +3,7 @@ library(recommenderlab)
 set.seed(1234)
 
 df_movies <- read.csv("DF_SEED1234_0p1", header=TRUE)
+#df_movies <- read.csv("DF_1p00", header=TRUE)
 movies <- as(df_movies, "realRatingMatrix")
 
 r <- sample(movies, 1000)

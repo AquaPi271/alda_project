@@ -1,0 +1,77 @@
+Michael Hahsler (2017). recommenderlab: Lab for Developing and
+Testing Recommender Algorithms. R package version 0.2-2.
+http://lyle.smu.edu/IDA/recommenderlab/
+
+@Manual{,
+title = {recommenderlab: Lab for Developing and Testing Recommender Algorithms},
+author = {Michael Hahsler},
+year = {2017},
+note = {R package version 0.2-2},
+url = {http://lyle.smu.edu/IDA/recommenderlab/},
+}
+
+The R extension package recommenderlab described in this paper has a completely different
+goal to the existing software packages. It is not a library to create recommender applications
+but provides a general research infrastructure for recommender systems. The focus is on
+consistent and efficient data handling, easy incorporation of algorithms (either implemented
+in R or interfacing existing algorithms), experiment set up and evaluation of the results
+
+Notes on paper for project:
+
+Matrix is m x n with user x movie_ids matrix and ratings are stored.
+
+Now the neighborhood for the active user N (a) ⊂ U can be selected by either a threshold
+on the similarity or by taking the k nearest neighbors. Once the users in the neighborhood
+are found, their ratings are aggregated to form the predicted rating for the active user. The
+easiest form is to just average the ratings in the neighborhood.
+rˆaj =
+1
+|N (a)|
+X
+i∈N (a)
+rij
+
+The fact that some users in the neighborhood are more similar to the active user than others
+can be incorporated as weights into Equation (3).
+rˆaj =
+1
+P
+i∈N (a)
+sai
+X
+i∈N (a)
+sairij
+
+
+
+
+For some types of data the performance of the recommender algorithm can be improved by
+removing user rating bias. This can be done by normalizing the rating data before applying
+the recommender algorithm. Any normalization function h : R
+n×m 7→ R
+n×m can be used
+for preprocessing. Ideally, this function is reversible to map the predicted rating on the
+normalized scale back to the original rating scale. Normalization is used to remove individual
+rating bias by users who consistently always use lower or higher ratings than other users. A
+popular method is to center the rows of the user-item rating matrix by
+h(rui) = rui − r¯u,
+
+
+Outstanding problem: The two main problems of user-based CF are that the whole user database has to be kept in memory and that expensive similarity computation between the active user and all other
+users in the database has to be performed.  
+**** Might be useful to load on demand, this could be useful benefit if it somehow can be arranged. ****
+Idea: Compute bit line for quick lookup of whether candidate evaluated movie or not.  Then do quicker lookup to find user information.  For 64 bit value and 17700 user ratings, this would require 278 uint64s (2222 bytes / user).
+
+Another idea:  A second level inference --- need to think this out.  Association rules.  Find a way to run through a second pass which could pull in more strongly correlated information.  For example, look 
+
+!!!!! Paper lookup:  Generating association rules. !!!!!! 
+
+
+Over time several other model-based approaches have been developed. A popular simple
+item-based approach is the Slope One algorithm (Lemire and Maclachlan 2005). Another
+family of algorithms is based on latent factors approach using matrix decomposition (Koren,
+Bell, and Volinsky 2009). These algorithms are outside the scope of this introductory paper.
+
+
+
+

@@ -1,0 +1,23 @@
+TODOS:
+
+Get a full flow working.
+
+(1)  Preprocess data.
+(2)  Read into R and convert to real ratings matrix.
+(3)  Use sampling approach.
+     (a) Splitting -- stratified sampling via pre-processed data.
+                      random assignment.  <--- do ths first
+     (b) k-fold cross-validation -- later approach
+(4)  Generate recommender
+(5)  Apply recommender
+(6)  Compute RMSE.
+
+For time based constraints build input as follows:
+(1)  For each user find the earliest rating.
+(2)  The time index will be assigned 0 to that rating for "0 days since first rating".
+(3)  Each subsequent rating will the time since the first rating.
+(4)  Idea:  Have a threshold for veteran ratings versus novice ratings.  When comparing users, factor this boost in the similarity comparison.
+(5)  Idea:  Have a continuous weight applied after the match by applying more weight to user ratings that have been around for longer.
+(6)  Idea:  Give a stronger weight to a user who has rated more movies.
+(7)  Idea:  Use purely experienced users to train rather than give more weight as in 6.
+(8)  Idea:  Get cold start users and find model for them and see if it differs.
