@@ -78,4 +78,4 @@ rmse_m = sqrt(diff_sq_sum / count)
 message( "Final rmse = ", rmse_m )
 print("Done!")
 
-# Final rmse = 1.04027567829555
+# Final rmse = 1.0547491985419
