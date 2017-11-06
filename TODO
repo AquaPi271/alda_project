@@ -1,5 +1,8 @@
 TODOS:
 
+#rec <- Recommender(movies_train, method = "UBCF")
+#pre <- predict(rec, movies_test[1:2], type = "ratings")
+
 Get a full flow working.
 
 (1)  Preprocess data.
@@ -9,7 +12,7 @@ Get a full flow working.
                       random assignment.  <--- do ths first
      (b) k-fold cross-validation -- later approach
 (4)  Generate recommender
-(5)  Apply recommender
+(5)  Apply predictor.     (For training set, must remove the predicted movie and record its value to get RMSE.)
 (6)  Compute RMSE.
 
 For time based constraints build input as follows:

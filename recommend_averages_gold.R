@@ -33,7 +33,6 @@ load = 1
 if( load == 1 ) {
   df_movies <- read.csv("DF_M2000_U55000_S1234", header=TRUE)
   movies <- as(df_movies, "realRatingMatrix")
-  movies_matrix <- as(df_movies, "matrix")
 }
 user_count = movies@data@Dim[1]
 movie_count = movies@data@Dim[2]
