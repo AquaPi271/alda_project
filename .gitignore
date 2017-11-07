@@ -10,8 +10,12 @@ midterm_report.log
 midterm_report-concordance.tex
 DF_1p00
 DF_M2000_U55000_S1234
+<<<<<<< HEAD
 DF1000
 DF17700
 .RDataTmp
 GrandPrize2009_BPC_BellKor.pdf
 ProgressPrize2008_BigChaos.pdf
+=======
+DF_M17700_U55000_S1234
+>>>>>>> cac938e20dbcf38276cc96c512b01101fa2cb9b8
