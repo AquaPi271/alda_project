@@ -1,0 +1,15 @@
+Programs to generate:
+
+Read all the movies files and place into files as follows:
+
+MOVIES_ALL
+  formatted -- movie,user,rating,date
+USERS_ALL
+  formatted -- user,movie,rating,date
+  
+All dates will be converted from Gregorian to a new days metric.  This will be days since first
+rating.  The first rating will be 0 for a given user.
+
+The files can be formatted for R and C++ work.  If R they will be dataframes but must always
+be in the same order and cannot include dates.  Format for R:  u<user_id>, i<item_id>, rating
+
