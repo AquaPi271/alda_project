@@ -11,4 +11,9 @@ Convert dates into days since the date 1/1/2000 do have a method to compare date
 
 days_since_2000.cc     -- test bench to convert date to number of days since 1/1/2000
 generate_all_movies.cc -- read every movie file and store into one file called ALL_MOVIES as above
- 
+
+
+Binary format of file:
+
+movie,user,rating,days
+uint16_t,uint32_t,uint8_t,uint16_t

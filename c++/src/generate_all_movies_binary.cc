@@ -112,7 +112,7 @@ auto read_movie_file_to_binary( const std::string & filename,
     write_uint16_to_buffer( buffer, movie, index );
     write_uint32_to_buffer( buffer, user, index+2 );
     write_uint8_to_buffer( buffer, rating, index+6 );
-    write_uint16_to_buffer( buffer, days, index+10 );
+    write_uint16_to_buffer( buffer, days, index+7 );
     index += bytes_to_write;
     bytes_in_buffer += bytes_to_write;
 
