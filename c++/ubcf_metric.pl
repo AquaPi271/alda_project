@@ -19,7 +19,7 @@ while( $line = <DATASET> ) {
     $users->{$data[1]}->{$data[0]} = $data[2];
 }
 close( DATASET );
-
+ 
 #print("user count = ".$user_count."\n");
 
 my ($train_users) = {};

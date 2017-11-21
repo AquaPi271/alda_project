@@ -1,5 +1,6 @@
 
-all: convert_to_dataframe generate_sample_movies read_netflix days_since_2000 generate_all_movies
+all: convert_to_dataframe generate_sample_movies read_netflix days_since_2000 generate_all_movies \
+     generate_all_movies_binary \
 
 days_since_2000 : bin/days_since_2000
 	@echo
@@ -9,6 +10,8 @@ read_netflix : bin/read_netflix
 
 generate_sample_movies : bin/generate_sample_movies
 	@echo
+
+generate_all_movies_binary : bin/generate_all_movies_binary
 
 generate_all_movies : bin/generate_all_movies
 	@echo
