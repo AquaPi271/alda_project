@@ -98,8 +98,12 @@ auto read_movie_file_to_binary( const std::string & filename,
     last_pos = pos+1;
     auto day = std::stoi(line.substr( last_pos, pos - last_pos ));
     uint32_t days = compute_days_since_2000( month, day, year );
+    if( days >= 65536 ) {
+      std::cerr << "Days exceeds data size." << std::endl;
+      exit(1);
+    }
 
-    uint32_t bytes_to_write = 2 + 4 + 4 + 1;
+    uint32_t bytes_to_write = 2 + 4 + 1 + 2;
     if( bytes_to_write + bytes_in_buffer > buffer_size ) {
       outfile.write( buffer, bytes_in_buffer );
       bytes_in_buffer = 0;
@@ -107,8 +111,8 @@ auto read_movie_file_to_binary( const std::string & filename,
     }
     write_uint16_to_buffer( buffer, movie, index );
     write_uint32_to_buffer( buffer, user, index+2 );
-    write_uint32_to_buffer( buffer, rating, index+6 );
-    write_uint8_to_buffer( buffer, days, index+10 );
+    write_uint8_to_buffer( buffer, rating, index+6 );
+    write_uint16_to_buffer( buffer, days, index+10 );
     index += bytes_to_write;
     bytes_in_buffer += bytes_to_write;
 
@@ -158,7 +162,7 @@ auto main( int32_t argc, char ** argv ) -> int32_t {
   std::sort( file_list.begin(), file_list.end() );
 
   std::ofstream outfile;
-  const uint32_t buffer_size = 4 * 4 * 1024;  // 4 uint32_t per entry each of 4 bytes for 1024 entries
+  const uint32_t buffer_size = 9 * 1024;  // 4 uint32_t per entry each of 4 bytes for 1024 entries
   char buffer[buffer_size];
   outfile.open( output_filename, std::ios::binary | std::ios::out );
   
