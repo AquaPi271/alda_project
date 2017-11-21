@@ -19,7 +19,6 @@ auto read_movie_file( const std::string & filename,
   uint32_t rating;
   
   file.open(filename);
-  std::getline( file, line );
   
   // Skip first line which is comment.
 
