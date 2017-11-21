@@ -3,7 +3,7 @@
 #     generate_all_movies_binary \
 
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
-     read_netflix_binary
+     read_netflix_binary base_metric
 
 days_since_2000 : bin/days_since_2000
 	@echo
@@ -15,6 +15,9 @@ generate_sample_movies_binary : bin/generate_sample_movies_binary
 	@echo
 
 read_netflix_binary : bin/read_netflix_binary
+	@echo
+
+base_metric : bin/base_metric
 	@echo
 
 bin/% : src/%.cc
