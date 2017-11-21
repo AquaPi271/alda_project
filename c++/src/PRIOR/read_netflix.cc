@@ -30,7 +30,7 @@ auto read_movie_file( const std::string & filename,
   uint32_t movie;
   uint32_t user;
   uint32_t rating;
-  uint32_t days;
+
   
   //  auto & user_map = movies[movie];
   //for( auto & u : user_map ) {
@@ -41,14 +41,12 @@ auto read_movie_file( const std::string & filename,
   while( std::getline( file, line ) ) {
     std::string::size_type last_pos = 0;
     auto pos = line.find( ",", last_pos );
-    movie = std::stoi(line.substr( 0, pos ));
+    movie = std::stoi(line.substr( 0, last_pos - 1 ));
     last_pos = pos + 1;
     pos = line.find( ",", last_pos );
-    user = std::stoi(line.substr( last_pos, pos - last_pos ));
+    user = std::stoi(line.substr( last_pos, pos - last_pos + 1 ));
     last_pos = pos + 1;
-    rating = std::stoi(line.substr( last_pos, pos - last_pos ));
-    last_pos = pos + 1;
-    days = std::stoi(line.substr( last_pos, pos - last_pos ));
+    rating = std::stoi(line.substr( last_pos ));
     movies[movie][user] = rating;
     users[user][movie] = rating;
     ++count;
