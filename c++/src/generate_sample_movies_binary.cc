@@ -6,151 +6,221 @@
 #include <set>
 #include <string>
 #include <vector>
-    
-auto read_movie_file( const std::string & filename,
-		      std::set<uint32_t> & movie_set,
-		      std::set<uint32_t> & users_set ) -> void {
 
-  std::ifstream file;
-  std::string line;
+void read_record( char * buffer, uint32_t index,
+		  uint16_t * movie,
+		  uint32_t * user,
+		  uint8_t  * rating,
+		  uint16_t * days );
+uint32_t read_uint32_from_buffer( char *buffer, uint32_t index );
+uint16_t read_uint16_from_buffer( char *buffer, uint32_t index );
+uint8_t  read_uint8_from_buffer( char *buffer, uint32_t index );
+void     read_movie_file_binary( const std::string & filename,
+				 std::set<uint16_t> & movie_set,
+				 std::set<uint32_t> & users_set,
+				 const std::string & output_filename );
+void read_movie_user_record( char * buffer, uint32_t index, uint16_t * movie, uint32_t * user );
+void read_movie_file_for_ids_binary( const std::string & filename,
+				     std::set<uint16_t> & movie_set,
+				     std::set<uint32_t> & ids_set );
+void write_uint32_to_buffer( char *buffer, uint32_t data, uint32_t index );
+void write_uint16_to_buffer( char *buffer, uint16_t data, uint32_t index );
+void write_uint8_to_buffer( char *buffer, uint8_t data, uint32_t index );
+  
+const uint32_t record_size = 9;
+const uint32_t buffer_size = record_size * 1024;
+char buffer[buffer_size];
+char out_buffer[buffer_size];
 
-  uint32_t movie;
-  uint32_t user;
-  uint32_t rating;
-  
-  file.open(filename);
-  std::getline( file, line );
-  
-  // Skip first line which is comment.
-
-  std::getline( file, line );
-
-  uint32_t count = 0;
-  while( std::getline( file, line ) ) {
-    ++count;
-    if( count % 1000000 == 0 ) {
-      std::cerr << count << std::endl;
-    }
-    std::string::size_type last_pos = 0;
-    auto pos = line.find( ",", last_pos );
-    movie = std::stoi(line.substr( 0, last_pos - 1 ));
-    if( movie_set.find(movie) == movie_set.end() ) {
-      continue;
-    }
-    last_pos = pos + 1;
-    pos = line.find( ",", last_pos );
-    user = std::stoi(line.substr( last_pos, pos - last_pos + 1 ));
-    if( users_set.find(user) == users_set.end() ) {
-      continue;
-    }
-    last_pos = pos + 1;
-    rating = std::stoi(line.substr( last_pos ));
-    std::cout << movie << "," <<
-      user << "," <<
-      rating << std::endl;
-  }
-  
-  file.close();
-  
+void read_record( char * buffer, uint32_t index,
+		  uint16_t * movie,
+		  uint32_t * user,
+		  uint8_t  * rating,
+		  uint16_t * days ) {
+  *movie  = read_uint16_from_buffer( buffer, index );
+  *user   = read_uint32_from_buffer( buffer, index+2 );
+  *rating = read_uint8_from_buffer(  buffer, index+6 );
+  *days   = read_uint16_from_buffer( buffer, index+7 );
 }
-auto read_movie_file_for_ids( const std::string & filename,
-			      std::set<uint32_t> & movie_set,
-			      std::set<uint32_t> & ids_set ) -> void {
+
+
+uint32_t read_uint32_from_buffer( char *buffer, uint32_t index ) {
+  uint32_t data =
+    static_cast<uint8_t>(buffer[index]) |
+    static_cast<uint8_t>(buffer[index+1]) << 8 |
+    static_cast<uint8_t>(buffer[index+2]) << 16 |
+    static_cast<uint8_t>(buffer[index+3]) << 24;
+  return( data );
+}
+
+uint16_t read_uint16_from_buffer( char *buffer, uint32_t index ) {
+  uint16_t data =
+    static_cast<uint8_t>(buffer[index]) |
+    static_cast<uint8_t>(buffer[index+1]) << 8;
+  return( data );
+}
+
+uint8_t read_uint8_from_buffer( char *buffer, uint32_t index ) {
+  uint8_t data =
+    static_cast<uint8_t>(buffer[index]);
+  return( data );
+}
+
+auto read_movie_file_binary( const std::string & filename,
+			     std::set<uint16_t> & movie_set,
+			     std::set<uint32_t> & users_set,
+			     const std::string & output_filename ) -> void {
 
   std::ifstream infile;
-
+  std::ofstream outfile;
+  uint32_t bytes_read = 0;
+  uint32_t file_size = 0;
   uint16_t movie;
   uint32_t user;
   uint8_t rating;
-  
-  file.open(filename);
-  std::getline( file, line );
-  
-  // Skip first line which is comment.
-
-  std::getline( file, line );
-
+  uint16_t days;
   uint32_t count = 0;
-  while( std::getline( file, line ) ) {
-    ++count;
-    if( count % 1000000 == 0 ) {
-      std::cerr << count << std::endl;
-    }
-    std::string::size_type last_pos = 0;
-    auto pos = line.find( ",", last_pos );
-    movie = std::stoi(line.substr( 0, last_pos - 1 ));
-    if( movie_set.find(movie) == movie_set.end() ) {
-      continue;
-    }
-    last_pos = pos + 1;
-    pos = line.find( ",", last_pos );
-    user = std::stoi(line.substr( last_pos, pos - last_pos + 1 ));
-    ids_set.insert( user );
+  uint32_t index = 0;
+  uint32_t bytes_in_buffer = 0;
+  uint32_t bytes_to_write = record_size;
+  
+  infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
+  if( !infile.is_open() ) {
+    std::cout << "Could not open file " << filename << std::endl;
+    exit(1);
+  }
+  outfile.open( output_filename, std::ios::binary | std::ios::out );
+  if( !outfile.is_open() ) {
+    std::cout << "Could not create output file " << output_filename << std::endl;
+    exit(1);
   }
   
-  file.close();
-  
+  file_size = infile.tellg();
+  infile.seekg(0, std::ios::beg);
+  while( bytes_read < file_size ) {
+    uint32_t amount_read = infile.readsome( buffer, buffer_size );
+    bytes_read += amount_read;
+    if( amount_read % 9 != 0 ) {
+      std::cerr << "Badness has happened.  Non-multiple of record size" << std::endl;
+      exit(1);
+    }
+    uint32_t records_read = amount_read / record_size;
+    for( uint32_t r = 0; r < records_read; ++r ) {
+      ++count;
+      if( count % 1000000 == 0 ) {
+	std::cerr << count << std::endl;
+      }
+      read_record( buffer, r * record_size, &movie, &user, &rating, &days );
+      if( movie_set.find(movie) == movie_set.end() ) {
+	continue;
+      }
+      if( users_set.find(user) == users_set.end() ) {
+	continue;
+      }
+
+      if( bytes_to_write + bytes_in_buffer > buffer_size ) {
+	outfile.write( out_buffer, bytes_in_buffer );
+	bytes_in_buffer = 0;
+	index = 0;
+      }
+      write_uint16_to_buffer( out_buffer, movie, index );
+      write_uint32_to_buffer( out_buffer, user, index+2 );
+      write_uint8_to_buffer( out_buffer, rating, index+6 );
+      write_uint16_to_buffer( out_buffer, days, index+7 );
+      index += bytes_to_write;
+      bytes_in_buffer += bytes_to_write;
+    }
+  }  
+  if( bytes_in_buffer > 0 ) {
+    outfile.write( out_buffer, bytes_in_buffer );
+  }
+  infile.close();
+  outfile.close();
 }
 
-auto read_movie_file_for_ids( const std::string & filename,
-			      std::set<uint32_t> & movie_set,
-			      std::set<uint32_t> & ids_set ) -> void {
+void read_movie_user_record( char * buffer, uint32_t index, uint16_t * movie, uint32_t * user ) {
+  *movie = read_uint16_from_buffer( buffer, index );
+  *user  = read_uint32_from_buffer( buffer, index+2 );
+}
 
-  std::ifstream file;
-  std::string line;
+auto read_movie_file_for_ids_binary( const std::string & filename,
+				     std::set<uint16_t> & movie_set,
+				     std::set<uint32_t> & ids_set ) -> void {
 
-  uint32_t movie;
+  uint32_t bytes_read = 0;
+  uint32_t file_size = 0;
+  uint16_t movie;
   uint32_t user;
-  uint32_t rating;
-  
-  file.open(filename);
-  std::getline( file, line );
-  
-  // Skip first line which is comment.
-
-  std::getline( file, line );
+  std::ifstream infile;
 
   uint32_t count = 0;
-  while( std::getline( file, line ) ) {
-    ++count;
-    if( count % 1000000 == 0 ) {
-      std::cerr << count << std::endl;
-    }
-    std::string::size_type last_pos = 0;
-    auto pos = line.find( ",", last_pos );
-    movie = std::stoi(line.substr( 0, last_pos - 1 ));
-    if( movie_set.find(movie) == movie_set.end() ) {
-      continue;
-    }
-    last_pos = pos + 1;
-    pos = line.find( ",", last_pos );
-    user = std::stoi(line.substr( last_pos, pos - last_pos + 1 ));
-    ids_set.insert( user );
+  
+  infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
+  if( !infile.is_open() ) {
+    std::cout << "Could not open file " << filename << std::endl;
+    exit(1);
   }
-  
-  file.close();
-  
+  file_size = infile.tellg();
+  infile.seekg(0, std::ios::beg);
+  while( bytes_read < file_size ) {
+    uint32_t amount_read = infile.readsome( buffer, buffer_size );
+    bytes_read += amount_read;
+    if( amount_read % 9 != 0 ) {
+      std::cerr << "Badness has happened.  Non-multiple of record size" << std::endl;
+      exit(1);
+    }
+    uint32_t records_read = amount_read / record_size;
+    for( uint32_t r = 0; r < records_read; ++r ) {
+      ++count;
+      if( count % 1000000 == 0 ) {
+	std::cerr << count << std::endl;
+      }
+      read_movie_user_record( buffer, r * record_size, &movie, &user );
+      if( movie_set.find(movie) == movie_set.end() ) {
+	continue;
+      }
+      ids_set.insert( user );
+    }
+  }
+  infile.close();  
+}
+
+void write_uint32_to_buffer( char *buffer, uint32_t data, uint32_t index ) {
+  buffer[index] = data & 0xFF;
+  buffer[index+1] = (data >> 8) & 0xFF;
+  buffer[index+2] = (data >> 16) & 0xFF;
+  buffer[index+3] = (data >> 24) & 0xFF;
+}
+
+void write_uint16_to_buffer( char *buffer, uint16_t data, uint32_t index ) {
+  buffer[index] = data & 0xFF;
+  buffer[index+1] = (data >> 8) & 0xFF;
+}
+
+void write_uint8_to_buffer( char *buffer, uint8_t data, uint32_t index ) {
+  buffer[index] = data & 0xFF;
 }
 
 auto main( int32_t argc, char **argv ) -> int {
   
   // Awesome, R can handle the overall sampling.  Just need to supply the data.
   
-  if( argc != 4 ) {
-    std::cerr << "Usage:  generate_sample_movies <seed> <movie_count> <user_count>" << std::endl;
+  if( argc != 5 ) {
+    std::cerr << "Usage:  " << argv[0] << " <seed> <movie_count> <user_count> <output_filename>" << std::endl;
     exit(1);
   }
 
-  std::string movie_filename{ "ALL_MOVIES" };
+  std::string movie_filename{ "ALL_MOVIES_BINARY" };
   std::string seed_text{ argv[1] };
   std::string movie_count_text{ argv[2] };
   std::string user_count_text{ argv[3] };
+  std::string output_filename{ argv[4] };
   
   uint32_t seed = std::stoi( seed_text );
   std::srand( seed );
   uint32_t movie_count = std::stoi( movie_count_text );
   uint32_t user_count = std::stoi( user_count_text );
-  
+
   if( movie_count < 1 || movie_count > 17700 ) {
     std::cerr << "Error:  Movie count must be between 1 and 17700 but is " <<
       movie_count << std::endl;
@@ -162,19 +232,19 @@ auto main( int32_t argc, char **argv ) -> int {
     exit(1);
   }
 
-  std::vector<uint32_t> movies_selected = {};
+  std::vector<uint16_t> movies_selected = {};
   for( auto i = 1; i <= 17700; ++i ) {
     movies_selected.push_back(i);
   }
 
   std::random_shuffle(movies_selected.begin(), movies_selected.end());
-  std::set<uint32_t> random_movies = {};
+  std::set<uint16_t> random_movies = {};
   for( auto i = 1; i <= movie_count; ++i ) {
     random_movies.insert( movies_selected[i] );
   }
-
+  
   std::set<uint32_t> users = {};
-  read_movie_file_for_ids(movie_filename, random_movies, users);
+  read_movie_file_for_ids_binary(movie_filename, random_movies, users);
 
   std::vector<uint32_t> valid_user_ids = {};
   for( auto & u : users ) {
@@ -188,8 +258,7 @@ auto main( int32_t argc, char **argv ) -> int {
     users_selected.insert( valid_user_ids[i] );
   }
   
-  read_movie_file( movie_filename, random_movies, users_selected );
+  read_movie_file_binary( movie_filename, random_movies, users_selected, output_filename );
   
   return(0);
-
 }
