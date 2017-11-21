@@ -74,10 +74,27 @@ foreach $movie (keys(%{$train_movies})) {
 	$sum += $rating;
     }
     $train_movies->{$movie}->{"average"} = $sum / scalar(@{$train_movies->{$movie}->{"ratings"}});
-    printf("Movie %d:  average = %g  ratings = %d\n", 
-	   $movie, 
-	   $train_movies->{$movie}->{"average"},
-	   scalar(@{$train_movies->{$movie}->{"ratings"}}));
+#    printf("Movie %d:  average = %g  ratings = %d\n", 
+#	   $movie, 
+#	   $train_movies->{$movie}->{"average"},
+#	   scalar(@{$train_movies->{$movie}->{"ratings"}}));
 }
+
+# From the test user set go through each user and randomly select a movie they did not rate.  Use
+# average value from the train set as the actual movie value.  Start recording RMSE.
+
+my ($rmse_N) = 0;
+my ($rmse_D) = 0;
+foreach $id (keys(%{$test_users})) {
+    my ($movies_rated) = scalar(keys(%{$test_users->{$id}}));
+    # Select one at random to predict rating.
+    my ($m_select) = int(rand()*$movies_rated);
+    my ($request_movie) = (keys(%{$test_users->{$id}}))[$m_select];
+    my ($test_rating) = $test_users->{$id}->{$request_movie};
+    my ($avg_rating) = $train_movies->{$request_movie}->{"average"};
+    $rmse_N += (($test_rating - $avg_rating)**2);
+    $rmse_D++;
+}
+print("RMSE = ".sqrt($rmse_N/$rmse_D)."\n");
     
 
