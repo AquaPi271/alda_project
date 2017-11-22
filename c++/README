@@ -20,6 +20,8 @@ uint16_t,uint32_t,uint8_t,uint16_t
 
 TODO:
 
+** Note in my paper all was implemented from scratch in C++. **
+
 3-4x over Perl for UBCF.  Wish I had more time to optimize.
 
 For tomorrow, get knn users along with # movies each matched above certain thresholds.

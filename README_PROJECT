@@ -13,3 +13,18 @@ rating.  The first rating will be 0 for a given user.
 The files can be formatted for R and C++ work.  If R they will be dataframes but must always
 be in the same order and cannot include dates.  Format for R:  u<user_id>, i<item_id>, rating
 
+=============================================================================================
+
+Compute Statistics:
+
+For a given formatted file compute its bulk metrics.  These are:
+
+  Total # Movies
+  Total # Users
+  Ratings frequency distribution:
+     1, 2, 3, 4, 5
+  Ratings mean score
+  Ratings variation
+  Average # ratings per user
+  Average # ratings per movie
+  
