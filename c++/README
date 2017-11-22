@@ -53,3 +53,8 @@ Record what I learn along the way!!!!!
 
 !!!! Measurements !!!!
 
+Definition:  pure cold start == very first movie watched
+
+For UBCF of pure cold start:  RMSE = 1.15591  (371/5500 ratings) 6.75% of users
+Overall data set of pure cold starts:  0.2% -- Reasonable to remove some of the pure cold starts
+This might not be easy to do.

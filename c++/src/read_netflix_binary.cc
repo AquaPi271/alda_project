@@ -68,6 +68,8 @@ auto read_movie_file_binary( const std::string & filename,
   uint32_t user;
   uint8_t rating;
   uint16_t days;
+
+  uint32_t count = 0;
   
   infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
   if( !infile.is_open() ) {
@@ -89,6 +91,10 @@ auto read_movie_file_binary( const std::string & filename,
       read_record( buffer, r * record_size, &movie, &user, &rating, &days );
       movies[movie][user] = rating;
       users[user][movie] = rating;
+      ++count;
+      if( count % 1000000 == 0 ) {
+	std::cerr << count << std::endl;
+      }
     }
   } 
   infile.close();
@@ -125,12 +131,17 @@ auto compute_statistics( std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies
   }
 
   float average_ratings_per_user = static_cast<float>(ratings_count) / static_cast<float>(user_count);
+
+  uint32_t pure_cold_start_count = 0;
   
   for( auto & u : users ) {
     auto & movie_map = users[u.first];
     auto ratings_count = 0;
     for( auto & m : movie_map ) {
       ++ratings_count;
+    }
+    if( ratings_count == 1 ) {
+      ++pure_cold_start_count;
     }
     double diff = (average_ratings_per_user - static_cast<float>(ratings_count));
     double diff2 = diff * diff;
@@ -139,7 +150,9 @@ auto compute_statistics( std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies
   
   std::cout << "Average number of ratings per user     = " << average_ratings_per_user << std::endl;
   std::cout << "Total number of users                  = " << user_count << std::endl;
-  std::cout << "Standard deviation of ratings per user = " << sqrt(sd_comp_sum / static_cast<float>(user_count)) << std::endl; 
+  std::cout << "Standard deviation of ratings per user = " << sqrt(sd_comp_sum / static_cast<float>(user_count)) << std::endl;
+  std::cout << "Pure cold start count                  = " << pure_cold_start_count << std::endl;
+  std::cout << "Pure cold start user rate              = " << static_cast<float>(pure_cold_start_count) / static_cast<float>(user_count) << std::endl;
 
   
 }
@@ -161,6 +174,7 @@ auto main( int argc, char **argv ) -> int {
   std::map<uint32_t,std::map<uint16_t,uint8_t>> users;
   
   read_movie_file_binary( s, movies, users );
+  std::cerr << "Movie file in memory.... Computing statistics..." << std::endl;
   compute_statistics( movies, users );
   
   return(0);

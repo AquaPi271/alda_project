@@ -1,4 +1,4 @@
-Total number of ratings = 100480506
+Total number of ratings = 100480507
 Ratings composition:
    1:  0.0459591
    2:  0.100836
@@ -8,3 +8,5 @@ Ratings composition:
 Average number of ratings per user     = 209.252
 Total number of users                  = 480189
 Standard deviation of ratings per user = 302.339
+Pure cold start count                  = 1269
+Pure cold start user rate              = 0.00264271

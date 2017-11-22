@@ -234,6 +234,7 @@ auto main( int argc, char **argv ) -> int {
   float rmse_D = 0.0f;
 
   uint32_t count = 0;
+  uint32_t cold_start_count = 0;
   
   for( auto & tu : test_users ) {
     ++count;
@@ -250,13 +251,25 @@ auto main( int argc, char **argv ) -> int {
     auto test_movie = (*item).first;
     auto avg_rating = train_movie_averages[test_movie];
 
-    find_top_knn_users_pearson( train_movie_users, train_users, test_users, tu.first, test_movie ); 
-    //rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
-    //++rmse_D;
-    
+    if( find_top_knn_users_cosine( train_movie_users, train_users, test_users,
+				   tu.first, test_movie ) ) {
+    } else { // Not one else rated!  Grab average as best recourse.      
+      auto test_rating = static_cast<float>((*item).second);
+      auto test_movie = (*item).first;
+      auto avg_rating = train_movie_averages[test_movie];
+      rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
+      ++rmse_D;
+      ++cold_start_count;
+      //if( rmse_D > 0 ) {
+      // std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
+      //	  "  cold start count = " << cold_start_count << " / " << count << std::endl;
+      //}
+    }
   }
 
-  //std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) << std::endl;
+  if( rmse_D > 0 ) {
+    std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) << "  cold start count = " << cold_start_count << " / " << count << std::endl;
+  }
   
   return(0);
 
