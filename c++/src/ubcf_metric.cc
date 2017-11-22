@@ -22,11 +22,16 @@ void read_movie_file_binary( const std::string & filename,
 			     std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
 			     std::map<uint32_t, std::map<uint16_t,uint8_t>> & users
 			     );
-bool find_top_knn_users( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users_movies,
-			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
-			 uint32_t user_id,
-			 uint32_t requested_movie );
+bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users_movies,
+				std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				uint32_t user_id,
+				uint32_t requested_movie );
+bool find_top_knn_users_pearson( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				 uint32_t user_id,
+				 uint32_t requested_movie );
 
 const uint32_t record_size = 9;
 const uint32_t buffer_size = record_size * 1024;
@@ -245,7 +250,7 @@ auto main( int argc, char **argv ) -> int {
     auto test_movie = (*item).first;
     auto avg_rating = train_movie_averages[test_movie];
 
-    find_top_knn_users( train_movie_users, train_users, test_users, tu.first, test_movie ); 
+    find_top_knn_users_pearson( train_movie_users, train_users, test_users, tu.first, test_movie ); 
     //rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
     //++rmse_D;
     
@@ -257,11 +262,11 @@ auto main( int argc, char **argv ) -> int {
 
 }
 
-bool find_top_knn_users( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
-			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
-			 uint32_t user_id,
-			 uint32_t requested_movie ) {
+bool find_top_knn_users_pearson( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				 uint32_t user_id,
+				 uint32_t requested_movie ) {
   // Get all training users that rated the requested movie.
   std::vector<uint32_t> users_who_watched = {};
   for( auto & train_mu : train_movie_users[requested_movie] ) {
@@ -278,6 +283,77 @@ bool find_top_knn_users( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_m
   if( tum_rated == 0 ) {
     return( false );
   }
+  uint32_t users_above_threshold = 0;
+  for( auto & wuser_id : users_who_watched ) {
+    uint32_t matched_count = 0;
+    std::vector<uint32_t> a = {};
+    std::vector<uint32_t> b = {};
+    for( auto & test_movie : test_user_movie ) {
+      auto train_movie_rating = train_user_movies[wuser_id].find( test_movie.first );
+      if( train_movie_rating != train_user_movies[wuser_id].end() ) {
+	++matched_count;
+	a.push_back( test_movie.second );
+	b.push_back( (*train_movie_rating).second );
+      }
+    }
+    if( matched_count > 0 ) {
+      uint32_t a_sum = 0;
+      uint32_t b_sum = 0;
+      for( auto & n : a ) {
+	a_sum += n;
+      }
+      for( auto & n : b ) {
+	b_sum += n;
+      }
+      float a_avg = static_cast<float>(a_sum) / static_cast<float>( a.size() );
+      float b_avg = static_cast<float>(b_sum) / static_cast<float>( b.size() );
+      
+      float AB = 0;
+      float A2 = 0;
+      float B2 = 0;
+      
+      for( uint32_t i = 0; i < a.size(); ++i ) {
+	float adiff = a_avg - static_cast<float>(a[i]);
+	float bdiff = b_avg - static_cast<float>(b[i]);
+	AB += (adiff * bdiff);
+	A2 += (adiff * adiff);
+	B2 += (bdiff * bdiff);	
+      }
+      float D = sqrt(A2) * sqrt(B2);
+      if( D != 0 ) {
+	auto pearson_dist = static_cast<float>(AB) / D;
+	//std::cout << pearson_dist << std::endl;
+      }
+    }
+  }
+
+  //std::cout << users_above_threshold << std::endl;
+
+  return( true );
+}
+
+bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				uint32_t user_id,
+				uint32_t requested_movie ) {
+  // Get all training users that rated the requested movie.
+  std::vector<uint32_t> users_who_watched = {};
+  for( auto & train_mu : train_movie_users[requested_movie] ) {
+    users_who_watched.push_back( train_mu.first );
+  }
+  // Simplify lookup for the test user.  Just need to create movie/ratings hash for it.
+  std::map<uint16_t,uint8_t> test_user_movie = {};
+  for( auto & tum : test_users[user_id] ) {
+    if( tum.first != requested_movie ) {
+      test_user_movie[tum.first] = tum.second;
+    }
+  }
+  auto tum_rated = test_user_movie.size();
+  if( tum_rated == 0 ) {
+    return( false );
+  }
+  uint32_t users_above_threshold = 0;
   for( auto & wuser_id : users_who_watched ) {
     uint32_t AB = 0;
     uint32_t A2 = 0;
@@ -295,11 +371,17 @@ bool find_top_knn_users( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_m
 	//std::cout << "a = " << a << " b = " << b << std::endl;
       }
     }
-    float D = sqrt(A2) * sqrt(B2);
-    if( D != 0 ) {
-      auto cos_dist = static_cast<float>(AB) / D;
+    if( matched_count > 1 ) {
+      ++users_above_threshold;
+      float D = sqrt(A2) * sqrt(B2);
+      if( D != 0 ) {
+	auto cos_dist = static_cast<float>(AB) / D;
+	//std::cout << cos_dist << std::endl;
+      }
     }
   }
+
+  //std::cout << users_above_threshold << std::endl;
 
   return( true );
 }

@@ -17,3 +17,37 @@ Binary format of file:
 
 movie,user,rating,days
 uint16_t,uint32_t,uint8_t,uint16_t
+
+TODO:
+
+3-4x over Perl for UBCF.  Wish I had more time to optimize.
+
+For tomorrow, get knn users along with # movies each matched above certain thresholds.
+Get some RMSE numbers! 
+
+Cosine is done!
+Pearson is done!
+
+Get IBCF working
+  - Cosine
+  - Pearson
+  
+Experiment with blending of global averages to low matching counts.
+
+Blend priority:  IBCF vs. UBCF vs. Global Averages
+   -- Slope-one
+   -- Average blending (possibly weighted).
+
+Normalized vs. non-normalized.
+
+Get k-fold working.
+
+*** Stretch goal is to include time information.
+
+
+!!!! Measurements !!!!
+
+Record what I learn along the way!!!!!
+
+!!!! Measurements !!!!
+
