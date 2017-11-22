@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "load_data.h"
+
 std::map<int32_t,int32_t> month_lookup =
   { {1,31}, {2,28}, {3,31}, {4,30}, {5,31}, {6,30},
     {7,31}, {8,31}, {9,30}, {10,31}, {11,30}, {12,31} };
@@ -40,31 +42,6 @@ int32_t compute_days_since_2000( int32_t month, int32_t day, int32_t year ) {
   sum_days += ( day - 1 );
   if( is_leap_year( year ) && (month > 2) ) { ++sum_days; }
   return(sum_days);
-}
-
-void write_uint32_to_buffer( char *buffer, uint32_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
-  buffer[index+1] = (data >> 8) & 0xFF;
-  buffer[index+2] = (data >> 16) & 0xFF;
-  buffer[index+3] = (data >> 24) & 0xFF;
-}
-
-void write_uint16_to_buffer( char *buffer, uint16_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
-  buffer[index+1] = (data >> 8) & 0xFF;
-}
-
-void write_uint8_to_buffer( char *buffer, uint8_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
-}
-
-uint32_t read_uint32_from_buffer( char *buffer, uint32_t index ) {
-  uint32_t data =
-    static_cast<uint8_t>(buffer[index]) |
-    static_cast<uint8_t>(buffer[index+1]) << 8 |
-    static_cast<uint8_t>(buffer[index+2]) << 16 |
-    static_cast<uint8_t>(buffer[index+3]) << 24;
-  return( data );
 }
 
 auto read_movie_file_to_binary( const std::string & filename,

@@ -7,82 +7,28 @@
 #include <string>
 #include <vector>
 
-void read_record( char * buffer, uint32_t index,
-		  uint16_t * movie,
-		  uint32_t * user,
-		  uint8_t  * rating,
-		  uint16_t * days );
-uint32_t read_uint32_from_buffer( char *buffer, uint32_t index );
-uint16_t read_uint16_from_buffer( char *buffer, uint32_t index );
-uint8_t  read_uint8_from_buffer( char *buffer, uint32_t index );
-void     read_movie_file_binary( const std::string & filename,
-				 std::set<uint16_t> & movie_set,
-				 std::set<uint32_t> & users_set,
-				 const std::string & output_filename );
-void read_movie_user_record( char * buffer, uint32_t index, uint16_t * movie, uint32_t * user );
-void read_movie_file_for_ids_binary( const std::string & filename,
-				     std::set<uint16_t> & movie_set,
-				     std::set<uint32_t> & ids_set );
-void write_uint32_to_buffer( char *buffer, uint32_t data, uint32_t index );
-void write_uint16_to_buffer( char *buffer, uint16_t data, uint32_t index );
-void write_uint8_to_buffer( char *buffer, uint8_t data, uint32_t index );
+#include "generate_sample_movies_binary.h"
+#include "load_data.h"
+
+auto generate_sample_movies_binary( const std::string & filename,
+				    std::set<uint16_t> & movie_set,
+				    std::set<uint32_t> & users_set,
+				    const std::string & output_filename ) -> void {
   
-const uint32_t record_size = 9;
-const uint32_t buffer_size = record_size * 1024;
-char buffer[buffer_size];
-char out_buffer[buffer_size];
-
-void read_record( char * buffer, uint32_t index,
-		  uint16_t * movie,
-		  uint32_t * user,
-		  uint8_t  * rating,
-		  uint16_t * days ) {
-  *movie  = read_uint16_from_buffer( buffer, index );
-  *user   = read_uint32_from_buffer( buffer, index+2 );
-  *rating = read_uint8_from_buffer(  buffer, index+6 );
-  *days   = read_uint16_from_buffer( buffer, index+7 );
-}
-
-
-uint32_t read_uint32_from_buffer( char *buffer, uint32_t index ) {
-  uint32_t data =
-    static_cast<uint8_t>(buffer[index]) |
-    static_cast<uint8_t>(buffer[index+1]) << 8 |
-    static_cast<uint8_t>(buffer[index+2]) << 16 |
-    static_cast<uint8_t>(buffer[index+3]) << 24;
-  return( data );
-}
-
-uint16_t read_uint16_from_buffer( char *buffer, uint32_t index ) {
-  uint16_t data =
-    static_cast<uint8_t>(buffer[index]) |
-    static_cast<uint8_t>(buffer[index+1]) << 8;
-  return( data );
-}
-
-uint8_t read_uint8_from_buffer( char *buffer, uint32_t index ) {
-  uint8_t data =
-    static_cast<uint8_t>(buffer[index]);
-  return( data );
-}
-
-auto read_movie_file_binary( const std::string & filename,
-			     std::set<uint16_t> & movie_set,
-			     std::set<uint32_t> & users_set,
-			     const std::string & output_filename ) -> void {
-
   std::ifstream infile;
+  char          buffer[buffer_size];
   std::ofstream outfile;
-  uint32_t bytes_read = 0;
-  uint32_t file_size = 0;
-  uint16_t movie;
-  uint32_t user;
-  uint8_t rating;
-  uint16_t days;
-  uint32_t count = 0;
-  uint32_t index = 0;
-  uint32_t bytes_in_buffer = 0;
-  uint32_t bytes_to_write = record_size;
+  char          out_buffer[buffer_size];
+  uint32_t      bytes_read = 0;
+  uint32_t      file_size = 0;
+  uint16_t      movie;
+  uint32_t      user;
+  uint8_t       rating;
+  uint16_t      days;
+  uint32_t      count = 0;
+  uint32_t      index = 0;
+  uint32_t      bytes_in_buffer = 0;
+  uint32_t      bytes_to_write = record_size;
   
   infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
   if( !infile.is_open() ) {
@@ -138,22 +84,18 @@ auto read_movie_file_binary( const std::string & filename,
   outfile.close();
 }
 
-void read_movie_user_record( char * buffer, uint32_t index, uint16_t * movie, uint32_t * user ) {
-  *movie = read_uint16_from_buffer( buffer, index );
-  *user  = read_uint32_from_buffer( buffer, index+2 );
-}
-
 auto read_movie_file_for_ids_binary( const std::string & filename,
 				     std::set<uint16_t> & movie_set,
 				     std::set<uint32_t> & ids_set ) -> void {
 
-  uint32_t bytes_read = 0;
-  uint32_t file_size = 0;
-  uint16_t movie;
-  uint32_t user;
+  char          buffer[buffer_size];
+  uint32_t      bytes_read = 0;
+  uint32_t      file_size = 0;
+  uint16_t      movie;
+  uint32_t      user;
   std::ifstream infile;
 
-  uint32_t count = 0;
+  uint32_t      count = 0;
   
   infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
   if( !infile.is_open() ) {
@@ -183,22 +125,6 @@ auto read_movie_file_for_ids_binary( const std::string & filename,
     }
   }
   infile.close();  
-}
-
-void write_uint32_to_buffer( char *buffer, uint32_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
-  buffer[index+1] = (data >> 8) & 0xFF;
-  buffer[index+2] = (data >> 16) & 0xFF;
-  buffer[index+3] = (data >> 24) & 0xFF;
-}
-
-void write_uint16_to_buffer( char *buffer, uint16_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
-  buffer[index+1] = (data >> 8) & 0xFF;
-}
-
-void write_uint8_to_buffer( char *buffer, uint8_t data, uint32_t index ) {
-  buffer[index] = data & 0xFF;
 }
 
 auto main( int32_t argc, char **argv ) -> int {
@@ -258,7 +184,7 @@ auto main( int32_t argc, char **argv ) -> int {
     users_selected.insert( valid_user_ids[i] );
   }
   
-  read_movie_file_binary( movie_filename, random_movies, users_selected, output_filename );
+  generate_sample_movies_binary( movie_filename, random_movies, users_selected, output_filename );
   
   return(0);
 }

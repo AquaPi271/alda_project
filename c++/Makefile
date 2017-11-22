@@ -2,6 +2,11 @@
 #all: convert_to_dataframe generate_sample_movies read_netflix days_since_2000 generate_all_movies \
 #     generate_all_movies_binary \
 
+INCLUDES = -I ./include
+
+OBJECTS = objects/load_data.o \
+          objects/statistics.o
+
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
      read_netflix_binary base_metric ubcf_metric
 
@@ -23,12 +28,17 @@ base_metric : bin/base_metric
 ubcf_metric : bin/ubcf_metric
 	@echo
 
-bin/% : src/%.cc
-	g++ -O3 -std=c++11 $< -o $@
+bin/% : objects/%.o $(OBJECTS)
+	g++ -O3 $(INCLUDES) -std=c++11 $^ -o $@
+
+objects/%.o : src/%.cc include/*
+	g++ -O3 -c $(INCLUDES) -std=c++11 $< -o $@
 
 .PHONY : clean
 
 clean :
+	rm -f objects/*.o
+	rm -f bin/*.exe
 	find . -name "*~" -print | xargs rm -f
 
 #####################
