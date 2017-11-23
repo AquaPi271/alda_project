@@ -11,11 +11,10 @@
 #include "load_data.h"
 #include "statistics.h"
 
-auto generate_sample_movies_binary( const std::string & filename,
-				    std::set<uint16_t> & movie_set,
-				    std::set<uint32_t> & users_set,
-				    const std::string & output_filename ) -> void {
-  
+void generate_sample_from_movie_user_pairs( const std::string & movie_filename,
+					    const std::string & output_filename,
+					    std::map<uint16_t,std::set<uint32_t>> & movie_users_to_extract ) {
+
   std::ifstream infile;
   char          buffer[buffer_size];
   std::ofstream outfile;
@@ -31,9 +30,9 @@ auto generate_sample_movies_binary( const std::string & filename,
   uint32_t      bytes_in_buffer = 0;
   uint32_t      bytes_to_write = record_size;
   
-  infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
+  infile.open( movie_filename, std::ios::binary | std::ios::in | std::ios::ate );
   if( !infile.is_open() ) {
-    std::cout << "Could not open file " << filename << std::endl;
+    std::cout << "Could not open file " << movie_filename << std::endl;
     exit(1);
   }
   outfile.open( output_filename, std::ios::binary | std::ios::out );
@@ -58,10 +57,10 @@ auto generate_sample_movies_binary( const std::string & filename,
 	std::cerr << count << std::endl;
       }
       read_record( buffer, r * record_size, &movie, &user, &rating, &days );
-      if( movie_set.find(movie) == movie_set.end() ) {
+      if( movie_users_to_extract.find(movie) == movie_users_to_extract.end() ) {
 	continue;
       }
-      if( users_set.find(user) == users_set.end() ) {
+      if( movie_users_to_extract[movie].find(user) == movie_users_to_extract[movie].end() ) {
 	continue;
       }
 
@@ -85,55 +84,12 @@ auto generate_sample_movies_binary( const std::string & filename,
   outfile.close();
 }
 
-auto read_movie_file_for_ids_binary( const std::string & filename,
-				     std::set<uint16_t> & movie_set,
-				     std::set<uint32_t> & ids_set ) -> void {
-
-  char          buffer[buffer_size];
-  uint32_t      bytes_read = 0;
-  uint32_t      file_size = 0;
-  uint16_t      movie;
-  uint32_t      user;
-  std::ifstream infile;
-
-  uint32_t      count = 0;
-  
-  infile.open( filename, std::ios::binary | std::ios::in | std::ios::ate );
-  if( !infile.is_open() ) {
-    std::cout << "Could not open file " << filename << std::endl;
-    exit(1);
-  }
-  file_size = infile.tellg();
-  infile.seekg(0, std::ios::beg);
-  while( bytes_read < file_size ) {
-    uint32_t amount_read = infile.readsome( buffer, buffer_size );
-    bytes_read += amount_read;
-    if( amount_read % 9 != 0 ) {
-      std::cerr << "Badness has happened.  Non-multiple of record size" << std::endl;
-      exit(1);
-    }
-    uint32_t records_read = amount_read / record_size;
-    for( uint32_t r = 0; r < records_read; ++r ) {
-      ++count;
-      if( count % 1000000 == 0 ) {
-	std::cerr << count << std::endl;
-      }
-      read_movie_user_record( buffer, r * record_size, &movie, &user );
-      if( movie_set.find(movie) == movie_set.end() ) {
-	continue;
-      }
-      ids_set.insert( user );
-    }
-  }
-  infile.close();  
-}
-
-void generate_movie_user_sample_by_frequency( const std::string & directory_name, 
-					      uint32_t top_movie_count,
-					      uint32_t top_user_count,
-					      std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
-					      std::map<uint32_t, std::map<uint16_t,uint8_t>> & users,
-					      std::vector<uint32_t> & sorted_frequent_rated_movies ) {
+void extract_movie_user_sample_by_frequency( uint32_t top_movie_count,
+					     uint32_t top_user_count,
+					     std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
+					     std::map<uint32_t, std::map<uint16_t,uint8_t>> & users,
+					     std::vector<uint16_t> & sorted_frequent_rated_movies,
+					     std::map<uint16_t,std::set<uint32_t>> & movie_users_to_extract) {
 
   // Algorithm (should be straightforward) :
   //   Already have sorted frequent movies.
@@ -148,7 +104,56 @@ void generate_movie_user_sample_by_frequency( const std::string & directory_name
   //   Foreach frequent movie in set A
   //     Grab all users in B that rated A.
   //     Store them to outputfile.
+
+  if( top_movie_count > sorted_frequent_rated_movies.size() ) {
+    std::cerr << "Not able to extract " << top_movie_count << " movies from the frequent list." << std::endl;
+    exit( 1 );
+  }
+
+  std::set<uint16_t> selected_movies_set{ sorted_frequent_rated_movies.begin(),
+                                          sorted_frequent_rated_movies.begin() + top_movie_count };
   
+  std::set<uint32_t> selected_users_set = {};
+  for( auto & sel_movie : selected_movies_set ) {
+    for( auto & u_r : movies[sel_movie] ) {
+      selected_users_set.insert( u_r.first );
+    }
+  }
+  
+  if( top_user_count > selected_users_set.size() ) {
+    std::cerr << "Not able to extract " << top_user_count << " users from the frequent list." << std::endl;
+    exit( 1 );
+  }
+
+  std::map<uint32_t,std::map<uint16_t,uint8_t>> frequent_users_subset;
+  for( auto & sel_u : selected_users_set ) {
+    frequent_users_subset[sel_u] = {};
+    for( auto & m_r : users[sel_u] ) {
+      if( selected_movies_set.find( m_r.first ) != selected_movies_set.end() ) {
+	frequent_users_subset[sel_u][m_r.first] = m_r.second;
+      }
+    }
+  }
+  
+  std::vector<uint32_t> sorted_frequent_rated_users_final = {};
+  get_sorted_frequent_rated_users( frequent_users_subset, sorted_frequent_rated_users_final );
+
+  std::set<uint32_t> top_selected_users_set = { sorted_frequent_rated_users_final.begin(),
+						sorted_frequent_rated_users_final.begin() + top_user_count };
+
+  movie_users_to_extract = {};
+
+  for( auto & fm : selected_movies_set ) {
+    movie_users_to_extract[fm] = {};
+    for( auto & u_r : movies[fm] ) {
+      if( top_selected_users_set.find(u_r.first) != top_selected_users_set.end() ) {
+	movie_users_to_extract[fm].insert( u_r.first );
+      }
+    }
+  }
+
+  // Whew!  Now re-read movie file and only output movie/user pairs found in movie_users_to_extract list.
+
 }
 
 auto main( int32_t argc, char **argv ) -> int {
@@ -185,61 +190,27 @@ auto main( int32_t argc, char **argv ) -> int {
 
   // Got the frequent lists, now output combinations of X and Y to files.
 
+  std::cerr << "Extracting top movies / users..." << std::endl;
+  
   uint32_t top_movie_count = 1000;  // X
   uint32_t top_user_count  = 500;   // Y
   
-  generate_movie_user_sample_by_frequency( top_movie_count, top_user_count,
-					   movies, users,
-					   sorted_frequent_rated_movies );
-  
-				    
+  std::map<uint16_t,std::set<uint32_t>>  movie_users_to_extract = {};
 
+  extract_movie_user_sample_by_frequency( top_movie_count, top_user_count,
+					  movies, users,
+					  sorted_frequent_rated_movies,
+					  movie_users_to_extract );
 
+  std::string output_filename = output_directory + "/TSAMPLE_M" +
+    std::to_string(top_movie_count) + "_U" + std::to_string(top_user_count);
   
+  std::cerr << "Generating sample file " << output_filename << "..." << std::endl;
   
-//  uint32_t seed = std::stoi( seed_text );
-//  std::srand( seed );
-//  uint32_t movie_count = std::stoi( movie_count_text );
-//  uint32_t user_count = std::stoi( user_count_text );
-//
-//  if( movie_count < 1 || movie_count > 17700 ) {
-//    std::cerr << "Error:  Movie count must be between 1 and 17700 but is " <<
-//      movie_count << std::endl;
-//    exit(1);
-//  }
-//  if( user_count < 1 || user_count > 480189 ) {
-//    std::cerr << "Error:  User count must be between 1 and 480189 but is " <<
-//      user_count << std::endl;
-//    exit(1);
-//  }
-//
-//  std::vector<uint16_t> movies_selected = {};
-//  for( auto i = 1; i <= 17700; ++i ) {
-//    movies_selected.push_back(i);
-//  }
-//
-//  std::random_shuffle(movies_selected.begin(), movies_selected.end());
-//  std::set<uint16_t> random_movies = {};
-//  for( auto i = 1; i <= movie_count; ++i ) {
-//    random_movies.insert( movies_selected[i] );
-//  }
-//  
-//  std::set<uint32_t> users = {};
-//  read_movie_file_for_ids_binary(movie_filename, random_movies, users);
-//
-//  std::vector<uint32_t> valid_user_ids = {};
-//  for( auto & u : users ) {
-//    valid_user_ids.push_back(u);
-//  }
-//
-//  std::random_shuffle(valid_user_ids.begin(), valid_user_ids.end());
-//
-//  std::set<uint32_t> users_selected = {};
-//  for( auto i = 1; i <= user_count; ++i ) {
-//    users_selected.insert( valid_user_ids[i] );
-//  }
-//  
-//  generate_sample_movies_binary( movie_filename, random_movies, users_selected, output_filename );
-//  
+  generate_sample_from_movie_user_pairs( movie_filename,
+					 output_filename,
+					 movie_users_to_extract );
+
   return(0);
+  
 }
