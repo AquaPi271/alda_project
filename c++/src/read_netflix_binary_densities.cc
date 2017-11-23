@@ -21,7 +21,67 @@ void classify_users( std::map<uint32_t,std::map<uint16_t,uint8_t>> & users,
   }
   
 }
-		  
+	
+void classify_movies( std::map<uint16_t,std::map<uint32_t,uint8_t>> & movies,
+		      std::map<uint32_t,std::vector<uint16_t>> & ratings_movies ) {
+
+  for( auto & m : movies ) {
+    auto rating_count = m.second.size();
+    if( ratings_movies.find(rating_count) != ratings_movies.end() ) {
+      ratings_movies[rating_count].push_back( m.first );
+    } else {
+      ratings_movies[rating_count] = { m.first };
+    }
+  }
+  
+}
+
+void display_sorted_rank_lists( std::map<uint16_t,std::map<uint32_t,uint8_t>> & movies,
+				std::map<uint32_t,std::map<uint16_t,uint8_t>> & users ) {
+ // Get sorted user list of most active users.
+
+  std::map<uint32_t,std::vector<uint32_t>> ratings_users;
+  std::map<uint32_t,std::vector<uint16_t>> ratings_movies;
+
+  classify_users( users, ratings_users );
+  classify_movies( movies, ratings_movies );
+
+  std::vector<uint32_t> sorted_user_ratings = {};
+
+  for( auto & ru : ratings_users ) {
+    sorted_user_ratings.push_back( ru.first );
+  }
+
+  std::sort( sorted_user_ratings.begin(), sorted_user_ratings.end() );
+  std::reverse( sorted_user_ratings.begin(), sorted_user_ratings.end() );
+
+  for( auto & sr : sorted_user_ratings ) {
+    std::cout << sr << " : ";
+    for( auto & ru : ratings_users[sr] ) {
+      std::cout << ru << " ";
+    }
+    std::cout << std::endl;
+  }
+  
+  std::vector<uint32_t> sorted_movie_ratings = {};
+
+  for( auto & rm : ratings_movies ) {
+    sorted_movie_ratings.push_back( rm.first );
+  }
+
+  std::sort( sorted_movie_ratings.begin(), sorted_movie_ratings.end() );
+  std::reverse( sorted_movie_ratings.begin(), sorted_movie_ratings.end() );
+
+  for( auto & sr : sorted_movie_ratings ) {
+    std::cout << sr << " : ";
+    for( auto & ru : ratings_movies[sr] ) {
+      std::cout << ru << " ";
+    }
+    std::cout << std::endl;
+  }
+
+}
+
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 2 ) {
@@ -45,28 +105,30 @@ auto main( int argc, char **argv ) -> int {
   //  compute_movie_ratings_counts( movies, movie_counts, buckets );
   //}
 
-  // Get sorted user list of most active users.
+  //display_sorted_rank_lists( movies, users );
+  
+  // Compute the density.
 
-  std::map<uint32_t,std::vector<uint32_t>> ratings_users;
+  uint64_t total_movie_count = movies.size();
+  uint64_t total_user_count = users.size();
+  uint64_t total_possible_ratings = total_movie_count * total_user_count;
+  uint64_t total_ratings_count = 0;
 
-  classify_users( users, ratings_users );
-
-  std::vector<uint32_t> sorted_ratings = {};
-
-  for( auto & ru : ratings_users ) {
-    sorted_ratings.push_back( ru.first );
+  for( auto & m : movies ) {
+    total_ratings_count += m.second.size();
   }
 
-  std::sort( sorted_ratings.begin(), sorted_ratings.end() );
-  std::reverse( sorted_ratings.begin(), sorted_ratings.end() );
+  float density = static_cast<float>(total_ratings_count) / static_cast<float>(total_possible_ratings);
+  
+  std::cout << "movie count               = " << total_movie_count << std::endl;
+  std::cout << "user count                = " << total_user_count << std::endl;
+  std::cout << "total possible ratings    = " << total_possible_ratings << std::endl;
+  std::cout << "total actual ratings      = " << total_ratings_count << std::endl;
+  std::cout << "density                   = " << density << std::endl;
 
-  for( auto & sr : sorted_ratings ) {
-    std::cout << sr << " : ";
-    for( auto & ru : ratings_users[sr] ) {
-      std::cout << ru << " ";
-    }
-    std::cout << std::endl;
-  }
+  
+  
+
   
   // Get sorted item list of most active items.
   

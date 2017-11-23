@@ -93,6 +93,12 @@ Item based collaborative filtering might be the way to go.
 
 !!!!! Check programming, something isn't quite right.  Seems like UBCF is a fringe benefit only, not a main way of doing things.
 
+UBCF and IBCF do not work well at very low densities (the 2.0% to 2.5% range appears to be the switch-over point.
+The stratified sampling might be wasted, at least directly.
+
+-- Goals:
+  Generate a high density item and movie
+
 *!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
 
 This could demonstrate the bane of sparsity and how it should be ignored?!
