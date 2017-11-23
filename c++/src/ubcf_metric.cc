@@ -11,6 +11,13 @@
 #include "load_data.h"
 #include "ubcf_metric.h"
 
+bool find_top_knn_users_cosine_record( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				       std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				       std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				       uint32_t user_id,
+				       uint32_t requested_movie,
+					 std::vector<uint32_t> & matched_user_ids);
+
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 4 ) {
@@ -103,8 +110,22 @@ auto main( int argc, char **argv ) -> int {
     auto test_movie = (*item).first;
     auto avg_rating = train_movie_averages[test_movie];
 
-    if( find_top_knn_users_cosine( train_movie_users, train_users, test_users,
-				   tu.first, test_movie ) ) {
+    std::vector<uint32_t> matched_users = {};
+    
+    if( find_top_knn_users_cosine_record( train_movie_users, train_users, test_users,
+					  tu.first, test_movie,
+					  matched_users ) ) {
+      // Get matched_users ratings.
+      //std::cout << "matched user = " << matched_users[0] << " ";
+      float rating = train_users[matched_users[0]][test_movie];     
+      auto test_rating = static_cast<float>((*item).second);
+      //std::cout << "rating = " << rating << " actual = " << test_rating << std::endl;
+      rmse_N += ((test_rating - rating)*(test_rating - rating));
+      ++rmse_D;
+      if( rmse_D > 0 ) {
+	std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
+      	  "  cold start count = " << cold_start_count << " / " << count << std::endl;
+      }      
     } else { // Not one else rated!  Grab average as best recourse.      
       auto test_rating = static_cast<float>((*item).second);
       auto test_movie = (*item).first;
@@ -246,6 +267,98 @@ bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & 
     }
   }
 
+  //std::cout << users_above_threshold << std::endl;
+
+  return( true );
+}
+
+bool find_top_knn_users_cosine_record( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				       std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				       std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				       uint32_t user_id,
+				       uint32_t requested_movie,
+				       std::vector<uint32_t> & matched_user_ids) {
+  // Get all training users that rated the requested movie.
+  std::vector<uint32_t> users_who_watched = {};
+  for( auto & train_mu : train_movie_users[requested_movie] ) {
+    users_who_watched.push_back( train_mu.first );
+  }
+  // Simplify lookup for the test user.  Just need to create movie/ratings hash for it.
+  std::map<uint16_t,uint8_t> test_user_movie = {};
+  for( auto & tum : test_users[user_id] ) {
+    if( tum.first != requested_movie ) {
+      test_user_movie[tum.first] = tum.second;
+    }
+  }
+  auto tum_rated = test_user_movie.size();
+  if( tum_rated == 0 ) {
+    return( false );
+  }
+  uint32_t users_above_threshold = 0;
+
+  bool highest_user_set = false;
+  float highest_user_match_rating = 0;
+  uint32_t highest_user_matched_rated_movies;
+  uint32_t highest_user_id;
+  for( auto & wuser_id : users_who_watched ) {
+    uint32_t AB = 0;
+    uint32_t A2 = 0;
+    uint32_t B2 = 0;
+    uint32_t matched_count = 0;
+    for( auto & test_movie : test_user_movie ) {
+      auto train_movie_rating = train_user_movies[wuser_id].find( test_movie.first );
+      if( train_movie_rating != train_user_movies[wuser_id].end() ) {
+	++matched_count;
+	uint32_t a = test_movie.second;
+	uint32_t b = (*train_movie_rating).second;
+	AB += a*b;
+	A2 += a*a;
+	B2 += b*b;
+	//std::cout << "a = " << a << " b = " << b << std::endl;
+      }
+    }
+    if( matched_count >= 1 ) {
+      //std::cout << "matched_count = " << matched_count << " for user " << wuser_id << std::endl;
+      float cos_dist = 0.0f;
+      ++users_above_threshold;
+      float D = sqrt(A2) * sqrt(B2);
+      if( D != 0 ) {
+	cos_dist = static_cast<float>(AB) / D;
+	//std::cout << cos_dist << std::endl;
+      }
+      if( !highest_user_set ) {
+	highest_user_set = true;
+	highest_user_match_rating = cos_dist;
+        highest_user_matched_rated_movies = matched_count;
+	highest_user_id = wuser_id;
+      } else {
+	if( matched_count >= highest_user_matched_rated_movies ) {
+	  highest_user_match_rating = cos_dist;
+	  highest_user_matched_rated_movies = matched_count;
+	  highest_user_id = wuser_id;
+	} else if( (matched_count == highest_user_matched_rated_movies) && (cos_dist > highest_user_match_rating) ) {
+	  highest_user_match_rating = cos_dist;
+	  highest_user_matched_rated_movies = matched_count;
+	  highest_user_id = wuser_id;
+	} else if( cos_dist > highest_user_match_rating ) {
+	  highest_user_match_rating = cos_dist;
+	  highest_user_matched_rated_movies = matched_count;
+	  highest_user_id = wuser_id;
+	}
+      }
+    } else {
+      return( false );
+      //if( highest_user_match_rating < 1.01 ) {
+      //	return( false );
+      //}
+    }
+    
+  }
+
+  std::cout << "h match rating = " << highest_user_match_rating << " count = " << highest_user_matched_rated_movies << std::endl;
+  
+  matched_user_ids.push_back( highest_user_id );
+  
   //std::cout << users_above_threshold << std::endl;
 
   return( true );

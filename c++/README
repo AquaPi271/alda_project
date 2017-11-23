@@ -75,4 +75,52 @@ Bucket 0 0 < bucket <= 9650 ( rating count = 20100658 ) [ movies in bucket = 156
 Bucket 1 9650 < bucket <= 28610 ( rating count = 20097720 ) [ movies in bucket = 1184 ] [ percent composition = 0.0666291 ] 
 Bucket 2 28610 < bucket <= 58563 ( rating count = 20121185 ) [ movies in bucket = 495 ] [ percent composition = 0.0278559 ] 
 Bucket 3 58563 < bucket <= 101500 ( rating count = 20151525 ) [ movies in bucket = 259 ] [ percent composition = 0.0145751 ] 
-Bucket 4 101500 < bucket <= 232944 ( rating count = 20009419 ) [ movies in bucket = 152 ] [ percent composition = 0.00855374 ] 
+Bucket 4 101500 < bucket <= 232944 ( rating count = 20009419 ) [ movies in bucket = 152 ] [ percent composition = 0.00855374 ]
+
+UBCF sucks ass!
+
+Is normalization that important?
+
+Despair -- :( :( :(
+
+Only hope if that KNN > 1 gives better results with an average.  If so, hope alive, otherwise F!
+
+Looks like training set is actually too large!
+
+Item based collaborative filtering might be the way to go.
+
+==> If low density doesn't work then see if I can generate a sampled set that makes high density data.
+
+!!!!! Check programming, something isn't quite right.  Seems like UBCF is a fringe benefit only, not a main way of doing things.
+
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+
+This could demonstrate the bane of sparsity and how it should be ignored?!
+
+
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+*!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
+
+From the paper:
+
+"In cases requiring real-time computation, the user average is the best algorithm, except
+for a small region where item average is preferred."
+1. When there are no computation constraints, the conclusions from the previous sections
+apply. Specifically, NMF performs best for sparse dataset, BPMF performs best for
+dense dataset, and regularized SVD and PMF perform the best otherwise (PMF works
+well with smaller user count while Regularized SVD works well smaller item counts).
+2. When the time constraint is 5 minutes, Regularized SVD, NLPMF, NPCA, and Rankbased
+CF (the ones colored darkly in Figure 11) are not considered. In this setting,
+3. When the time constraint is 1 minutes, PMF and BPMF are additionally excluded
+from consideration. Slope-one works best in most cases, except for the sparsest data
+where NMF works best.
+4. In cases requiring real-time computation, the user average is the best algorithm, except
+for a small region where item average is preferred.
