@@ -8,7 +8,7 @@ OBJECTS = objects/load_data.o \
           objects/statistics.o
 
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
-     read_netflix_binary base_metric ubcf_metric
+     read_netflix_binary base_metric ubcf_metric generate_sample_movies_binary_buckets
 
 days_since_2000 : bin/days_since_2000
 	@echo
@@ -17,6 +17,9 @@ generate_all_movies_binary : bin/generate_all_movies_binary
 	@echo
 
 generate_sample_movies_binary : bin/generate_sample_movies_binary
+	@echo
+
+generate_sample_movies_binary_buckets : bin/generate_sample_movies_binary_buckets
 	@echo
 
 read_netflix_binary : bin/read_netflix_binary

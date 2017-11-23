@@ -9,7 +9,7 @@
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 2 ) {
-    std::cerr << "Usage: read_netflix <filename>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
     exit(1);
   }
   std::string base_path{"./"};

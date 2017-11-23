@@ -14,13 +14,13 @@
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 4 ) {
-    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <test_set_percent>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <train_set_percent>" << std::endl;
     exit(1);
   }
 
   std::string s{ argv[1] };
   uint32_t random_seed = std::stoi( argv[2] );
-  float test_set_percent = std::stof( argv[3] );
+  float train_set_percent = std::stof( argv[3] );
 
   std::default_random_engine random_generator{random_seed};
 
@@ -38,7 +38,7 @@ auto main( int argc, char **argv ) -> int {
   
   std::random_shuffle( random_user_ids.begin(), random_user_ids.end() );
 
-  uint32_t train_user_count = std::round( test_set_percent * users.size() );
+  uint32_t train_user_count = std::round( train_set_percent * users.size() );
   uint32_t test_user_count = users.size() - train_user_count;
 
   auto train_start = random_user_ids.begin();
