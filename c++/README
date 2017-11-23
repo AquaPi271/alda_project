@@ -97,6 +97,7 @@ Item based collaborative filtering might be the way to go.
 
 This could demonstrate the bane of sparsity and how it should be ignored?!
 
+Instead cull dataset for top M users and top N items.  This should produce better results for IBCF and UBCF.
 
 *!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
 *!@&%#($(#@$ =====>  Try to instead sample from the top X users and top Y items!   <======
