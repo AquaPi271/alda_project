@@ -135,7 +135,19 @@ void generate_movie_user_sample_by_frequency( const std::string & directory_name
 					      std::map<uint32_t, std::map<uint16_t,uint8_t>> & users,
 					      std::vector<uint32_t> & sorted_frequent_rated_movies ) {
 
-  // Algorithm:
+  // Algorithm (should be straightforward) :
+  //   Already have sorted frequent movies.
+  //   Check that X >= sorted_frequent_rated_movies.
+  //   Get a list of X top rated movies and place into a set. (A)
+  //   Scroll through set, for each movie:
+  //     Get all users and place into a set.
+  //   From available user set, see if >= top_user_count to ensure we can extract that many.
+  //   Build subset of users map of the movies in this set from master list.
+  //   Get sorted frequent user list from the above map.
+  //   Place top Y users into a set from prior step.  (B)
+  //   Foreach frequent movie in set A
+  //     Grab all users in B that rated A.
+  //     Store them to outputfile.
   
 }
 
