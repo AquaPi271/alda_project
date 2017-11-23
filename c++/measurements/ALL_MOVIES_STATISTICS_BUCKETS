@@ -1,0 +1,88 @@
+Total number of ratings = 100480507
+Ratings composition:
+   1:  0.0459591
+   2:  0.100836
+   3:  0.286735
+   4:  0.335896
+   5:  0.230574
+Average number of ratings per user     = 209.252
+Total number of users                  = 480189
+Standard deviation of ratings per user = 302.339
+Pure cold start count                  = 1269
+Pure cold start user rate              = 0.00264271
+
+>>> Buckets = 1
+Bucket 0 0 < bucket <= 232944 ( rating count = 100480507 ) [ movies in bucket = 17770 ] [ percent composition = 1 ] 
+Bucket 1 232944 < bucket <= 232944 ( rating count = 0 ) [ movies in bucket = 0 ] [ percent composition = 0 ] 
+
+>>> Buckets = 2
+Bucket 0 0 < bucket <= 41664 ( rating count = 50255838 ) [ movies in bucket = 17154 ] [ percent composition = 0.965335 ] 
+Bucket 1 41664 < bucket <= 232944 ( rating count = 50224669 ) [ movies in bucket = 616 ] [ percent composition = 0.0346652 ] 
+
+>>> Buckets = 3
+Bucket 0 0 < bucket <= 21585 ( rating count = 33511402 ) [ movies in bucket = 16595 ] [ percent composition = 0.933877 ] 
+Bucket 1 21585 < bucket <= 73004 ( rating count = 33496254 ) [ movies in bucket = 867 ] [ percent composition = 0.0487901 ] 
+Bucket 2 73004 < bucket <= 232944 ( rating count = 33472851 ) [ movies in bucket = 308 ] [ percent composition = 0.0173326 ] 
+
+>>> Buckets = 4
+Bucket 0 0 < bucket <= 13788 ( rating count = 25128767 ) [ movies in bucket = 16117 ] [ percent composition = 0.906978 ] 
+Bucket 1 13788 < bucket <= 41664 ( rating count = 25127071 ) [ movies in bucket = 1037 ] [ percent composition = 0.0583568 ] 
+Bucket 2 41664 < bucket <= 89911 ( rating count = 25127387 ) [ movies in bucket = 411 ] [ percent composition = 0.0231289 ] 
+Bucket 3 89911 < bucket <= 232944 ( rating count = 25097282 ) [ movies in bucket = 205 ] [ percent composition = 0.0115363 ] 
+
+>>> Buckets = 5
+Bucket 0 0 < bucket <= 9650 ( rating count = 20100658 ) [ movies in bucket = 15680 ] [ percent composition = 0.882386 ] 
+Bucket 1 9650 < bucket <= 28610 ( rating count = 20097720 ) [ movies in bucket = 1184 ] [ percent composition = 0.0666291 ] 
+Bucket 2 28610 < bucket <= 58563 ( rating count = 20121185 ) [ movies in bucket = 495 ] [ percent composition = 0.0278559 ] 
+Bucket 3 58563 < bucket <= 101500 ( rating count = 20151525 ) [ movies in bucket = 259 ] [ percent composition = 0.0145751 ] 
+Bucket 4 101500 < bucket <= 232944 ( rating count = 20009419 ) [ movies in bucket = 152 ] [ percent composition = 0.00855374 ] 
+
+>>> Buckets = 6
+Bucket 0 0 < bucket <= 7460 ( rating count = 16753073 ) [ movies in bucket = 15289 ] [ percent composition = 0.860383 ] 
+Bucket 1 7460 < bucket <= 21585 ( rating count = 16758329 ) [ movies in bucket = 1306 ] [ percent composition = 0.0734947 ] 
+Bucket 2 21585 < bucket <= 41679 ( rating count = 16786115 ) [ movies in bucket = 560 ] [ percent composition = 0.0315138 ] 
+Bucket 3 41679 < bucket <= 73029 ( rating count = 16783168 ) [ movies in bucket = 308 ] [ percent composition = 0.0173326 ] 
+Bucket 4 73029 < bucket <= 108528 ( rating count = 16761092 ) [ movies in bucket = 187 ] [ percent composition = 0.0105234 ] 
+Bucket 5 108528 < bucket <= 232944 ( rating count = 16638730 ) [ movies in bucket = 120 ] [ percent composition = 0.00675295 ] 
+
+>>> Buckets = 7
+Bucket 0 0 < bucket <= 5990 ( rating count = 14356154 ) [ movies in bucket = 14930 ] [ percent composition = 0.84018 ] 
+Bucket 1 5990 < bucket <= 17306 ( rating count = 14358925 ) [ movies in bucket = 1419 ] [ percent composition = 0.0798537 ] 
+Bucket 2 17306 < bucket <= 32479 ( rating count = 14385986 ) [ movies in bucket = 610 ] [ percent composition = 0.0343275 ] 
+Bucket 3 32479 < bucket <= 53163 ( rating count = 14367820 ) [ movies in bucket = 350 ] [ percent composition = 0.0196961 ] 
+Bucket 4 53163 < bucket <= 81930 ( rating count = 14364671 ) [ movies in bucket = 215 ] [ percent composition = 0.012099 ] 
+Bucket 5 81930 < bucket <= 116362 ( rating count = 14367821 ) [ movies in bucket = 147 ] [ percent composition = 0.00827237 ] 
+Bucket 6 116362 < bucket <= 232944 ( rating count = 14279130 ) [ movies in bucket = 99 ] [ percent composition = 0.00557119 ] 
+
+>>> Buckets = 8
+Bucket 0 0 < bucket <= 4928 ( rating count = 12561231 ) [ movies in bucket = 14599 ] [ percent composition = 0.821553 ] 
+Bucket 1 4928 < bucket <= 13788 ( rating count = 12567536 ) [ movies in bucket = 1518 ] [ percent composition = 0.0854249 ] 
+Bucket 2 13788 < bucket <= 25905 ( rating count = 12565013 ) [ movies in bucket = 655 ] [ percent composition = 0.0368599 ] 
+Bucket 3 25905 < bucket <= 41664 ( rating count = 12562058 ) [ movies in bucket = 382 ] [ percent composition = 0.0214969 ] 
+Bucket 4 41664 < bucket <= 62955 ( rating count = 12617279 ) [ movies in bucket = 247 ] [ percent composition = 0.0138998 ] 
+Bucket 5 62955 < bucket <= 89999 ( rating count = 12600107 ) [ movies in bucket = 165 ] [ percent composition = 0.00928531 ] 
+Bucket 6 89999 < bucket <= 121761 ( rating count = 12628779 ) [ movies in bucket = 121 ] [ percent composition = 0.00680923 ] 
+Bucket 7 121761 < bucket <= 232944 ( rating count = 12378504 ) [ movies in bucket = 83 ] [ percent composition = 0.00467079 ] 
+
+>>> Buckets = 9
+Bucket 0 0 < bucket <= 4190 ( rating count = 11167968 ) [ movies in bucket = 14292 ] [ percent composition = 0.804277 ] 
+Bucket 1 4190 < bucket <= 11380 ( rating count = 11175348 ) [ movies in bucket = 1602 ] [ percent composition = 0.0901519 ] 
+Bucket 2 11380 < bucket <= 21585 ( rating count = 11168086 ) [ movies in bucket = 701 ] [ percent composition = 0.0394485 ] 
+Bucket 3 21585 < bucket <= 34205 ( rating count = 11187428 ) [ movies in bucket = 412 ] [ percent composition = 0.0231851 ] 
+Bucket 4 34205 < bucket <= 50665 ( rating count = 11164641 ) [ movies in bucket = 270 ] [ percent composition = 0.0151941 ] 
+Bucket 5 50665 < bucket <= 73029 ( rating count = 11217214 ) [ movies in bucket = 186 ] [ percent composition = 0.0104671 ] 
+Bucket 6 73029 < bucket <= 98002 ( rating count = 11193358 ) [ movies in bucket = 133 ] [ percent composition = 0.00748452 ] 
+Bucket 7 98002 < bucket <= 128493 ( rating count = 11208343 ) [ movies in bucket = 102 ] [ percent composition = 0.00574001 ] 
+Bucket 8 128493 < bucket <= 232944 ( rating count = 10998121 ) [ movies in bucket = 72 ] [ percent composition = 0.00405177 ] 
+
+>>> Buckets = 10
+Bucket 0 0 < bucket <= 3641 ( rating count = 10048171 ) [ movies in bucket = 14006 ] [ percent composition = 0.788182 ] 
+Bucket 1 3641 < bucket <= 9650 ( rating count = 10052487 ) [ movies in bucket = 1674 ] [ percent composition = 0.0942037 ] 
+Bucket 2 9650 < bucket <= 18828 ( rating count = 10064644 ) [ movies in bucket = 749 ] [ percent composition = 0.0421497 ] 
+Bucket 3 18828 < bucket <= 28612 ( rating count = 10061688 ) [ movies in bucket = 436 ] [ percent composition = 0.0245357 ] 
+Bucket 4 28612 < bucket <= 41679 ( rating count = 10070527 ) [ movies in bucket = 290 ] [ percent composition = 0.0163196 ] 
+Bucket 5 41679 < bucket <= 58567 ( rating count = 10080613 ) [ movies in bucket = 205 ] [ percent composition = 0.0115363 ] 
+Bucket 6 58567 < bucket <= 80122 ( rating count = 10079091 ) [ movies in bucket = 147 ] [ percent composition = 0.00827237 ] 
+Bucket 7 80122 < bucket <= 101779 ( rating count = 10115646 ) [ movies in bucket = 112 ] [ percent composition = 0.00630276 ] 
+Bucket 8 101779 < bucket <= 134284 ( rating count = 10100438 ) [ movies in bucket = 88 ] [ percent composition = 0.00495217 ] 
+Bucket 9 134284 < bucket <= 232944 ( rating count = 9807202 ) [ movies in bucket = 63 ] [ percent composition = 0.0035453 ] 

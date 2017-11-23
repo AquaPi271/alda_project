@@ -61,3 +61,18 @@ This might not be easy to do.
 
 However, will next try stratified sampling by number of ratings.  Constructing frequency count of
 movie ratings to see if I can break into categories.
+
+Decided to use this as my buckets.  For 2000 count the breakdown is:
+
+Bucket 0 = 1765
+Bucket 1 = 133
+Bucket 2 = 56
+Bucket 3 = 29
+Bucket 4 = 17
+
+>>> Buckets = 5
+Bucket 0 0 < bucket <= 9650 ( rating count = 20100658 ) [ movies in bucket = 15680 ] [ percent composition = 0.882386 ] 
+Bucket 1 9650 < bucket <= 28610 ( rating count = 20097720 ) [ movies in bucket = 1184 ] [ percent composition = 0.0666291 ] 
+Bucket 2 28610 < bucket <= 58563 ( rating count = 20121185 ) [ movies in bucket = 495 ] [ percent composition = 0.0278559 ] 
+Bucket 3 58563 < bucket <= 101500 ( rating count = 20151525 ) [ movies in bucket = 259 ] [ percent composition = 0.0145751 ] 
+Bucket 4 101500 < bucket <= 232944 ( rating count = 20009419 ) [ movies in bucket = 152 ] [ percent composition = 0.00855374 ] 
