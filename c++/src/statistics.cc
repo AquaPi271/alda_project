@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include <set>
 #include <vector>
 
 auto compute_bulk_statistics( std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
@@ -140,5 +141,62 @@ void compute_movie_ratings_counts( const std::map<uint16_t, std::map<uint32_t,ui
 	      << " [ percent composition = "
 	      << (static_cast<float>(bucket_vec[bucket_index].movie_count) / static_cast<float>(total_movies))
 	      << " ] " << std::endl;
+  }
+}
+
+void get_sorted_frequent_rated_movies( std::map<uint16_t,std::map<uint32_t,uint8_t>> & movies,
+				       std::vector<uint16_t> & sorted_frequent_rated_movies ) {
+  
+  // Index is number of ratings which points to movie ids that have that many ratings.
+  std::map<uint32_t,std::vector<uint16_t>> ratings_movies = {};  
+  
+  for( auto & m : movies ) {
+    auto rating_count = m.second.size();
+    if( ratings_movies.find(rating_count) != ratings_movies.end() ) {
+      ratings_movies[rating_count].push_back( m.first );
+    } else {
+      ratings_movies[rating_count] = { m.first };
+    }
+  }
+  
+  std::set<uint32_t> sorted_movie_ratings = {};
+  
+  for( auto & rm : ratings_movies ) {
+    sorted_movie_ratings.insert( rm.first );
+  }
+
+  for( auto smi = sorted_movie_ratings.rbegin(); smi != sorted_movie_ratings.rend(); ++smi ) {
+    for( auto & movie_id : ratings_movies[*smi] ) {
+      sorted_frequent_rated_movies.push_back( movie_id );
+    }
+  }
+  
+}
+
+void get_sorted_frequent_rated_users( std::map<uint32_t,std::map<uint16_t,uint8_t>> & users,
+				      std::vector<uint32_t> & sorted_frequent_rated_users ) {
+  
+  // Index is number of ratings which points to user ids that have that many ratings.
+  std::map<uint32_t,std::vector<uint32_t>> ratings_users = {};
+  
+  for( auto & u : users ) {
+    auto rating_count = u.second.size();
+    if( ratings_users.find(rating_count) != ratings_users.end() ) {
+      ratings_users[rating_count].push_back( u.first );
+    } else {
+      ratings_users[rating_count] = { u.first };
+    }
+  }
+  
+  std::set<uint32_t> sorted_user_ratings = {};
+  
+  for( auto & rm : ratings_users ) {
+    sorted_user_ratings.insert( rm.first );
+  }
+
+  for( auto sui = sorted_user_ratings.rbegin(); sui != sorted_user_ratings.rend(); ++sui ) {
+    for( auto & user_id : ratings_users[*sui] ) {
+      sorted_frequent_rated_users.push_back( user_id );
+    }
   }
 }

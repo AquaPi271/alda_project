@@ -62,9 +62,9 @@ void read_movie_user_record( char * buffer, uint32_t index, uint16_t * movie, ui
 }
 
 auto read_binary_to_movies_users( const std::string & filename,
-				    std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
-				    std::map<uint32_t, std::map<uint16_t,uint8_t>> & users
-				    ) -> void {
+				  std::map<uint16_t, std::map<uint32_t,uint8_t>> & movies,
+				  std::map<uint32_t, std::map<uint16_t,uint8_t>> & users
+				  ) -> void {
   
   std::ifstream infile;
   char          buffer[buffer_size];
