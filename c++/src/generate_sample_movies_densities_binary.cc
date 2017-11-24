@@ -192,25 +192,29 @@ auto main( int32_t argc, char **argv ) -> int {
 
   std::cerr << "Extracting top movies / users..." << std::endl;
   
-  uint32_t top_movie_count = 1000;  // X
-  uint32_t top_user_count  = 500;   // Y
-  
-  std::map<uint16_t,std::set<uint32_t>>  movie_users_to_extract = {};
+  for( uint32_t top_movie_count = 1000; top_movie_count < 10500; top_movie_count += 2000 ) {
+    for( uint32_t top_user_count = 500; top_user_count < 5500; top_user_count += 1000 ) {
 
-  extract_movie_user_sample_by_frequency( top_movie_count, top_user_count,
-					  movies, users,
-					  sorted_frequent_rated_movies,
-					  movie_users_to_extract );
-
-  std::string output_filename = output_directory + "/TSAMPLE_M" +
-    std::to_string(top_movie_count) + "_U" + std::to_string(top_user_count);
+      std::cout << ">>> Extracting movie count / user count = " << top_movie_count << " / " << top_user_count << std::endl;
+      
   
-  std::cerr << "Generating sample file " << output_filename << "..." << std::endl;
-  
-  generate_sample_from_movie_user_pairs( movie_filename,
-					 output_filename,
-					 movie_users_to_extract );
+      std::map<uint16_t,std::set<uint32_t>>  movie_users_to_extract = {};
 
+      extract_movie_user_sample_by_frequency( top_movie_count, top_user_count,
+					      movies, users,
+					      sorted_frequent_rated_movies,
+					      movie_users_to_extract );
+      
+      std::string output_filename = output_directory + "/TSAMPLE_M" +
+	std::to_string(top_movie_count) + "_U" + std::to_string(top_user_count);
+      
+      std::cerr << "Generating sample file " << output_filename << "..." << std::endl;
+      
+      generate_sample_from_movie_user_pairs( movie_filename,
+					     output_filename,
+					     movie_users_to_extract );
+    }
+  }
+  
   return(0);
-  
 }
