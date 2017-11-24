@@ -27,15 +27,31 @@ bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & 
 				uint32_t user_id,
 				uint32_t requested_movie,
 				std::vector<uint32_t> & matched_user_ids);
+bool find_top_knn_users_cosine_normalized( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+					   std::map<uint32_t,std::map<uint16_t,float>> & train_user_movies,
+					   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
+					   uint32_t user_id,
+					   uint32_t requested_movie,
+					   std::vector<uint32_t> & matched_user_ids);
 
 
-//void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
-//		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT ) {
-//  // Copy from ints to floats
-//  for( auto & u : u_m_r ) {
-//    for( auto & m : u_m_r[u] ) {
-//      
-//}
+void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
+		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT ) {
+  // Copy from ints to floats
+  for( auto & u : u_m_r ) {
+    uint32_t movie_rating_sum = 0;
+    uint32_t movie_rating_count = 0;
+    u_m_r_OUT[u.first] = {};
+    for( auto & m : u_m_r[u.first] ) {
+      movie_rating_sum += m.second;
+      ++movie_rating_count;
+    }
+    float average = static_cast<float>( movie_rating_sum ) / static_cast<float>( movie_rating_count );
+    for( auto & m : u_m_r[u.first] ) {
+      u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
+    }
+  }
+}
 
 float compute_user_bias( uint32_t user_id,
 			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users,
@@ -131,9 +147,8 @@ auto main( int argc, char **argv ) -> int {
   
   // Create normalized versions of the above.
 
-  
-  //normalize_from( train_users, Norm_train_users );
-  //normalize_from( test_users, Norm_test_users );
+  normalize_from( train_users, Norm_train_users );
+  normalize_from( test_users, Norm_test_users );
   
   // RMSE start!
 
@@ -160,9 +175,12 @@ auto main( int argc, char **argv ) -> int {
 
     std::vector<uint32_t> matched_users = {};
     
-    if( find_top_knn_users_cosine( train_movie_users, train_users, test_users,
-				   tu.first, test_movie,
-				   matched_users ) ) {
+    //    if( find_top_knn_users_cosine( train_movie_users, train_users, test_users,
+    //				   tu.first, test_movie,
+    //				   matched_users ) ) {
+    if( find_top_knn_users_cosine_normalized( train_movie_users, Norm_train_users, Norm_test_users,
+					      tu.first, test_movie,
+					      matched_users ) ) {
       // Get matched_users ratings.
       //std::cout << "matched user = " << matched_users[0] << " ";
       float ratings_sum = 0;
@@ -297,6 +315,65 @@ bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & 
   }
   // Simplify lookup for the test user.  Just need to create movie/ratings hash for it.
   std::map<uint16_t,uint8_t> test_user_movie = {};
+  for( auto & tum : test_users[user_id] ) {
+    if( tum.first != requested_movie ) {
+      test_user_movie[tum.first] = tum.second;
+    }
+  }
+  uint32_t target_test_rating = test_users[user_id][requested_movie];
+
+  auto tum_rated = test_user_movie.size();
+  if( tum_rated == 0 ) {
+    return( false );
+  }
+
+  std::vector<nn> knn = {};
+  
+  for( auto & wuser_id : users_who_watched ) {
+    uint32_t AB = 0;
+    uint32_t A2 = 0;
+    uint32_t B2 = 0;
+    uint32_t matched_count = 0;
+    //std::cout << "train user = " << wuser_id << ":" << std::endl;
+    for( auto & test_movie : test_user_movie ) {
+      auto train_movie_rating = train_user_movies[wuser_id].find( test_movie.first );
+      if( train_movie_rating != train_user_movies[wuser_id].end() ) {
+	++matched_count;
+	uint32_t a = test_movie.second;
+	uint32_t b = (*train_movie_rating).second;
+	AB += a*b;
+	A2 += a*a;
+	B2 += b*b;
+	//std::cout << "     a = " << a << " b = " << b << std::endl;
+      }
+    }
+    float D = sqrt(A2) * sqrt(B2);
+    if( D != 0 ) {
+      float cos_dist = static_cast<float>(AB) / D;
+      add_to_knn( wuser_id, matched_count, cos_dist, knn );
+    }
+  }
+
+  for( auto & n : knn ) {  
+    matched_user_ids.push_back( n.user_id );
+  }
+  
+  return( true );
+}
+
+bool find_top_knn_users_cosine_normalized( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+					   std::map<uint32_t,std::map<uint16_t,float>> & train_user_movies,
+					   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
+					   uint32_t user_id,
+					   uint32_t requested_movie,
+					   std::vector<uint32_t> & matched_user_ids) {
+  // Get all training users that rated the requested movie.
+  std::vector<uint32_t> users_who_watched = {};
+  for( auto & train_mu : train_movie_users[requested_movie] ) {
+    users_who_watched.push_back( train_mu.first );
+  }
+  // Simplify lookup for the test user.  Just need to create movie/ratings hash for it.
+  std::map<uint16_t,float> test_user_movie = {};
   for( auto & tum : test_users[user_id] ) {
     if( tum.first != requested_movie ) {
       test_user_movie[tum.first] = tum.second;
