@@ -9,72 +9,13 @@
 #include <vector>
 
 #include "load_data.h"
-#include "ubcf_metric.h"
-
-struct nn {
-  uint32_t user_id;
-  uint32_t matched_count;
-  float    dist;
-};
-
-uint32_t Gk = 1;
-float Gt = 0.95;
-
-void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float dist, std::vector<nn> & knn );
-bool find_top_knn_users_cosine( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-				std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
-				std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
-				uint32_t user_id,
-				uint32_t requested_movie,
-				std::vector<uint32_t> & matched_user_ids);
-bool find_top_knn_users_cosine_normalized( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-					   std::map<uint32_t,std::map<uint16_t,float>> & train_user_movies,
-					   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
-					   uint32_t user_id,
-					   uint32_t requested_movie,
-					   std::vector<uint32_t> & matched_user_ids);
-
-
-void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
-		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT ) {
-  // Copy from ints to floats
-  for( auto & u : u_m_r ) {
-    uint32_t movie_rating_sum = 0;
-    uint32_t movie_rating_count = 0;
-    u_m_r_OUT[u.first] = {};
-    for( auto & m : u_m_r[u.first] ) {
-      movie_rating_sum += m.second;
-      ++movie_rating_count;
-    }
-    float average = static_cast<float>( movie_rating_sum ) / static_cast<float>( movie_rating_count );
-    for( auto & m : u_m_r[u.first] ) {
-      u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
-    }
-  }
-}
-
-float compute_user_bias( uint32_t user_id,
-			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users,
-			 std::map<uint16_t,float> train_movie_averages ) {
-
-  float bias = 0.0f;
-  float N = 0.0f;
-
-  for( auto & m_r : train_users[user_id] ) {
-    float avg = train_movie_averages[m_r.first];
-    float user_rating = static_cast<float>(m_r.second);
-    bias += (user_rating - avg);
-    N += 1.0f;
-  }
-
-  return( bias / N );
-  
-}
+#include "ibcf_metric.h"
 
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 6 ) {
-    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <train_set_percent> <k> <k_threshold>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <train_set_percent> "
+	      << "<k> <k_threshold>" << std::endl;
     exit(1);
   }
 
@@ -421,9 +362,11 @@ bool find_top_knn_users_cosine_normalized( std::map<uint16_t,std::map<uint32_t,u
 }
 
 
-void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float dist, std::vector<nn> & knn ) {
-
-  uint32_t k = Gk;
+void add_to_knn( uint32_t k,
+		 uint32_t wuser_id,
+		 uint32_t matched_count,
+		 float dist,
+		 std::vector<nn> & knn ) {
 
   if( knn.size() < k ) {
     knn.push_back( {wuser_id, matched_count, dist} );
@@ -443,5 +386,41 @@ void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float dist, std::vec
       knn[lowest_index] = {wuser_id, matched_count, dist};
     }
   }
+  
+}
+
+void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
+		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT ) {
+  // Copy from ints to floats
+  for( auto & u : u_m_r ) {
+    uint32_t movie_rating_sum = 0;
+    uint32_t movie_rating_count = 0;
+    u_m_r_OUT[u.first] = {};
+    for( auto & m : u_m_r[u.first] ) {
+      movie_rating_sum += m.second;
+      ++movie_rating_count;
+    }
+    float average = static_cast<float>( movie_rating_sum ) / static_cast<float>( movie_rating_count );
+    for( auto & m : u_m_r[u.first] ) {
+      u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
+    }
+  }
+}
+
+float compute_user_bias( uint32_t user_id,
+			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users,
+			 std::map<uint16_t,float> train_movie_averages ) {
+
+  float bias = 0.0f;
+  float N = 0.0f;
+
+  for( auto & m_r : train_users[user_id] ) {
+    float avg = train_movie_averages[m_r.first];
+    float user_rating = static_cast<float>(m_r.second);
+    bias += (user_rating - avg);
+    N += 1.0f;
+  }
+
+  return( bias / N );
   
 }

@@ -145,3 +145,35 @@ Similarities should be computed on biased corrected ratings.  Will follow the pa
 to unbias a row, get the overall average rating and subtract from each rating to get an unbiased
 indicator.  This is purely for similarity purposes.  Once a similarity is selected, those particular
 scores are not needed.
+
+
+YES!!!!!! This is working!!!!!!
+
+Need to collect data and produce plots.
+
+Things to do:
+
+Conditioning on random seeds.
+k-folds must be added to give valid results.
+IBCF needs to be done with normalization.
+Various switches for metrics -- normalized, knn, k-threshold, pearson, cosine, global_blending vs. not
+Density measurements
+Sparse vs. dense
+
+Item based collaborative filtering.  How to construct a similarity matrix?
+
+I think I see:
+
+For each pair of items construct a similarity matrix.  Every time the pair shows up add cosine attributes to the appropriate
+slot.
+
+Do not forget to normalize a user's ratings.
+
+Will be triangular matrix.  Given two ids, lower value is first and higher is second.
+
+Test user comes along with X items and wants to find rating they'd give to one unknown item.
+
+For their ratings of item M look at how similar it is to objective.  Use weighted averages of user's ratings, based on
+similarity to get objective score.
+
+Truncation appears to produce remarkable results.  Is this effect real?

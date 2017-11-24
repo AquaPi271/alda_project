@@ -1,0 +1,63 @@
+NN-search
+
+ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M1000_U500 2 10 0.8 k = * c
+Final RMSE = 1.06989  k = 1
+Final RMSE = 1.00783  k = 2
+Final RMSE = 0.994723  k = 3
+Final RMSE = 0.964259  k = 4
+Final RMSE = 0.947858  k = 5
+Final RMSE = 0.938953  k = 6
+Final RMSE = 0.934332  k = 7
+Final RMSE = 0.933487  k = 8
+Final RMSE = 0.917955  k = 9
+Final RMSE = 0.911916  k = 10
+Final RMSE = 0.914213  k = 11
+Final RMSE = 0.919693  k = 12
+Final RMSE = 0.91955  k = 13
+Final RMSE = 0.920846  k = 14
+Final RMSE = 0.9202  k = 15
+Final RMSE = 0.9196  k = 16
+Final RMSE = 0.919204  k = 17
+Final RMSE = 0.917446  k = 18
+Final RMSE = 0.916902  k = 19
+
+ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M3000_U500 2 10 0.8 k = * c
+Final RMSE = 1.28523  k = 1
+Final RMSE = 1.06417  k = 2
+Final RMSE = 1.02081  k = 3
+Final RMSE = 1.00178  k = 4
+Final RMSE = 0.984677  k = 5
+Final RMSE = 0.968813  k = 6
+Final RMSE = 0.960364  k = 7
+Final RMSE = 0.961237  k = 8
+Final RMSE = 0.959686  k = 9
+Final RMSE = 0.949265  k = 10
+Final RMSE = 0.943318  k = 11
+Final RMSE = 0.941514  k = 12
+Final RMSE = 0.943528  k = 13
+Final RMSE = 0.939602  k = 14
+Final RMSE = 0.940515  k = 15
+Final RMSE = 0.942158  k = 16
+Final RMSE = 0.942806  k = 17
+Final RMSE = 0.938722  k = 18
+
+bin/ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M1000_U500 2 10 0.8 k=* p
+Final RMSE = 1.06989  k = 1
+Final RMSE = 0.968483  k = 2
+Final RMSE = 0.933953  k = 3
+Final RMSE = 0.917073  k = 4
+Final RMSE = 0.922488  k = 5
+Final RMSE = 0.912456  k = 6
+Final RMSE = 0.907364  k = 7
+Final RMSE = 0.899235  k = 8
+Final RMSE = 0.89011  k = 9
+Final RMSE = 0.894001  k = 10
+Final RMSE = 0.890705  k = 11
+Final RMSE = 0.888394  k = 12
+Final RMSE = 0.885226  k = 13
+Final RMSE = 0.884785  k = 14
+Final RMSE = 0.883678  k = 15
+Final RMSE = 0.881055  k = 16
+Final RMSE = 0.878462  k = 17
+Final RMSE = 0.876393  k = 18
+Final RMSE = 0.875314  k = 19

@@ -13,18 +13,35 @@
 
 auto main( int argc, char **argv ) -> int {
 
-  if( argc != 5 ) {
-    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <train_set_percent> "
-	      << "<k>" << std::endl;
+  if( argc != 7 ) {
+    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <folds> <train_test_percent> <k> <similarity_method>"
+	      << std::endl;
     exit(1);
   }
 
   std::string s{ argv[1] };
   uint32_t    random_seed       = std::stoi( argv[2] );
-  float       train_set_percent = std::stof( argv[3] );
-  uint32_t    k                 = std::stoi( argv[4] );
+  uint32_t    folds             = std::stoi( argv[3] );
+  float       train_set_percent = std::stof( argv[4] );
+  uint32_t    k                 = std::stoi( argv[5] );
+  std::string method_arg{ argv[6] };
+  bool pearson = false;
+  bool cosine  = false;
+  if( method_arg == "p" ) {
+    pearson = true;
+  } else if( method_arg == "c" ) {
+    cosine = true;
+  } else {
+    std::cerr << "Method argument must be 'p' or 'c'." << std::endl;
+  }
+  
   //float       t                 = std::stof( argv[5] );  // Threshold way of knn, elided for now.
 
+  if( folds < 1 ) {
+    std::cout << "Fold count must be >= 1." << std::endl;
+    exit( 1 );
+  }
+  
   std::default_random_engine random_generator{random_seed};
 
   std::map<uint16_t,std::map<uint32_t,uint8_t>> movies;
@@ -40,126 +57,143 @@ auto main( int argc, char **argv ) -> int {
   }
   
   std::random_shuffle( random_user_ids.begin(), random_user_ids.end() );
-
-  uint32_t train_user_count = std::round( train_set_percent * users.size() );
-  uint32_t test_user_count = users.size() - train_user_count;
-
-  auto train_start = random_user_ids.begin();
-  auto train_end   = random_user_ids.begin() + train_user_count;
-  auto test_start  = random_user_ids.begin() + train_user_count;
-  auto test_end    = random_user_ids.end();
   
-  std::vector<uint32_t> train_user_ids(train_start, train_end);
-  std::vector<uint32_t> test_user_ids(test_start, test_end);
+  uint32_t total_folds = folds;
 
-  //std::cout << "train_user_count  = " << train_user_count << std::endl;
-  //std::cout << "train vector size = " << train_user_ids.size() << std::endl;
-  //std::cout << "test_user_count   = " << test_user_count << std::endl;
-  //std::cout << "test vector size  = " << test_user_ids.size() << std::endl;
+  std::vector<float> RMSE( total_folds, 0.0f );
 
-  // Build train and test map.
-
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> train_users;
-  std::map<uint16_t,std::map<uint32_t,uint8_t>> train_movie_users;
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> test_users;
-  std::map<uint16_t,std::vector<uint8_t>> train_movies;
-  std::map<uint16_t,float> train_movie_averages;
-  
-  std::map<uint32_t,std::map<uint16_t,float>> Norm_train_users;
-  std::map<uint32_t,std::map<uint16_t,float>> Norm_test_users;
-  
-  for( auto & u : train_user_ids ) {  // vector of user ids
-    train_users[u] = users[u];
-    for( auto & m : users[u] ) {      // user -> map[movie] = rating
-      train_movies[m.first].push_back(m.second);
-      train_movie_users[m.first][u] = m.second;
-    }
-  }
-  for( auto & u : test_user_ids ) {
-    test_users[u] = users[u];
-  }
-  for( auto & m : train_movies ) {
-    uint32_t sum = 0;
-    for( auto & r : m.second ) {
-      sum += r;
-    }
-    train_movie_averages[m.first] = static_cast<float>(sum) / static_cast<float>( m.second.size() );
-  }
-  
-  // Create normalized versions of the above.
-
-  normalize_from( train_users, Norm_train_users );
-  normalize_from( test_users, Norm_test_users );
-  
-  // RMSE start!
-
-  float rmse_N = 0.0f;
-  float rmse_D = 0.0f;
-
-  uint32_t count = 0;
-  uint32_t cold_start_count = 0;
-  
-  for( auto & tu : test_users ) {
-    ++count;
-    if( count % 100 == 0 ) {
-      std::cout << count << std::endl;
-    }
-    auto movies_rated = tu.second.size();
-    std::uniform_int_distribution<uint32_t> dist(0, movies_rated - 1);
-    auto random_offset = dist(random_generator);
-    auto item = tu.second.begin();
-    std::advance( item, random_offset );
-    auto test_rating = static_cast<float>((*item).second);
-    auto test_movie = (*item).first;
-    auto avg_rating = train_movie_averages[test_movie];
-
-    std::vector<uint32_t> matched_users = {};
+  for( uint32_t fold = 0; fold < total_folds; ++fold ) {
     
-    //    if( find_top_knn_users_cosine( k, train_movie_users, train_users, test_users,
-    //				   tu.first, test_movie,
-    //				   matched_users ) ) {
-    if( find_top_knn_users_cosine_normalized( k, train_movie_users, Norm_train_users, Norm_test_users,
-					      tu.first, test_movie,
-					      matched_users ) ) {
-      // Get matched_users ratings.
-      //std::cout << "matched user = " << matched_users[0] << " ";
-      float ratings_sum = 0;
-      float ratings_count = 0;
-      float test_user_bias = compute_user_bias( tu.first, test_users, train_movie_averages, true, test_movie );
-      for( auto & mu : matched_users ) {
-	ratings_sum += (train_users[mu][test_movie] - compute_user_bias( mu, train_users, train_movie_averages, false, 0 ));
-	ratings_count += 1.0f;
+    std::vector<uint32_t> train_user_ids = {};
+    std::vector<uint32_t> test_user_ids  = {};
+    
+    if( total_folds == 1 ) { // Going into percentage mode for test generation.
+      extract_fold_user_ids_percentage_method( random_user_ids, train_set_percent, train_user_ids, test_user_ids );
+    } else {    
+      extract_fold_user_ids( random_user_ids, fold, total_folds, train_user_ids, test_user_ids );
+    }
+
+    // Build train and test map.
+
+    std::map<uint32_t,std::map<uint16_t,uint8_t>> train_users;
+    std::map<uint16_t,std::map<uint32_t,uint8_t>> train_movie_users;
+    std::map<uint32_t,std::map<uint16_t,uint8_t>> test_users;
+    std::map<uint16_t,std::vector<uint8_t>> train_movies;
+    std::map<uint16_t,float> train_movie_averages;
+    
+    std::map<uint32_t,std::map<uint16_t,float>> Norm_train_users;
+    std::map<uint32_t,std::map<uint16_t,float>> Norm_test_users;
+    
+    for( auto & u : train_user_ids ) {  // vector of user ids
+      train_users[u] = users[u];
+      for( auto & m : users[u] ) {      // user -> map[movie] = rating
+	train_movies[m.first].push_back(m.second);
+	train_movie_users[m.first][u] = m.second;
       }
-      if( ratings_count <= 0 ) {
+    }
+    for( auto & u : test_user_ids ) {
+      test_users[u] = users[u];
+    }
+    for( auto & m : train_movies ) {
+      uint32_t sum = 0;
+      for( auto & r : m.second ) {
+	sum += r;
+      }
+      train_movie_averages[m.first] = static_cast<float>(sum) / static_cast<float>( m.second.size() );
+    }
+  
+    // Create normalized versions of the above.
+
+    normalize_from( train_users, Norm_train_users );
+    normalize_from( test_users, Norm_test_users );
+  
+    // RMSE start!
+
+    float rmse_N = 0.0f;
+    float rmse_D = 0.0f;
+    
+    uint32_t count = 0;
+    uint32_t cold_start_count = 0;
+  
+    for( auto & tu : test_users ) {
+      ++count;
+      if( count % 100 == 0 ) {
+	std::cout << count << std::endl;
+      }
+      auto movies_rated = tu.second.size();
+      std::uniform_int_distribution<uint32_t> dist(0, movies_rated - 1);
+      auto random_offset = dist(random_generator);
+      auto item = tu.second.begin();
+      std::advance( item, random_offset );
+      auto test_rating = static_cast<float>((*item).second);
+      auto test_movie = (*item).first;
+      auto avg_rating = train_movie_averages[test_movie];
+      
+      std::vector<uint32_t> matched_users = {};
+      
+      //    if( find_top_knn_users_cosine( k, train_movie_users, train_users, test_users,
+      //				   tu.first, test_movie,
+      //				   matched_users ) ) {
+      bool warm_reading = false;
+      if( cosine ) {
+	warm_reading = find_top_knn_users_cosine_normalized( k, train_movie_users, Norm_train_users, Norm_test_users,
+							     tu.first, test_movie,
+							     matched_users );
+      } else if( pearson ) {
+	warm_reading = find_top_knn_users_pearson_normalized( k, train_movie_users, Norm_train_users, Norm_test_users,
+							      tu.first, test_movie,
+							      matched_users );
+      }
+      if( warm_reading ) {
+	// Get matched_users ratings.
+	//std::cout << "matched user = " << matched_users[0] << " ";
+	float ratings_sum = 0;
+	float ratings_count = 0;
+	float test_user_bias = compute_user_bias( tu.first, test_users, train_movie_averages, true, test_movie );
+	for( auto & mu : matched_users ) {
+	  ratings_sum += (static_cast<float>(train_users[mu][test_movie]) - compute_user_bias( mu, train_users, train_movie_averages, false, 0 ));
+	  ratings_count += 1.0f;
+	}
+	if( ratings_count <= 0 ) {
+	  auto test_rating = static_cast<float>((*item).second);
+	  auto test_movie = (*item).first;
+	  auto avg_rating = train_movie_averages[test_movie];
+	  rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
+	  ++rmse_D;
+	}	else {
+	  float rating = ratings_sum / ratings_count + test_user_bias;
+	  auto test_rating = static_cast<float>((*item).second);
+	  rmse_N += ((test_rating - rating)*(test_rating - rating));
+	  ++rmse_D;
+	}
+
+      } else { // Not one else rated!  Grab average as best recourse.      
 	auto test_rating = static_cast<float>((*item).second);
 	auto test_movie = (*item).first;
 	auto avg_rating = train_movie_averages[test_movie];
 	rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
 	++rmse_D;
-      }	else {
-	float rating = ratings_sum / ratings_count + test_user_bias;
-	auto test_rating = static_cast<float>((*item).second);
-	rmse_N += ((test_rating - rating)*(test_rating - rating));
-	++rmse_D;
+	++cold_start_count;
+	//if( rmse_D > 0 ) {
+	// std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
+	//	  "  cold start count = " << cold_start_count << " / " << count << std::endl;
+	//}
       }
+    }
 
-    } else { // Not one else rated!  Grab average as best recourse.      
-      auto test_rating = static_cast<float>((*item).second);
-      auto test_movie = (*item).first;
-      auto avg_rating = train_movie_averages[test_movie];
-      rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
-      ++rmse_D;
-      ++cold_start_count;
-      //if( rmse_D > 0 ) {
-      // std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
-      //	  "  cold start count = " << cold_start_count << " / " << count << std::endl;
-      //}
+    if( rmse_D > 0 ) {
+      RMSE[fold] = sqrt( rmse_N / rmse_D );
+      //std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
     }
   }
 
-  if( rmse_D > 0 ) {
-    std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) << "  k = " << k << " cold start count = " << cold_start_count << " / " << count << std::endl;
+  float RMSE_sum = 0.0;
+  for( auto & rmse : RMSE ) {
+    RMSE_sum += rmse;
   }
+  
+  std::cout << "Final RMSE = " << (RMSE_sum/static_cast<float>(RMSE.size())) << "  k = " << k << std::endl;
+
   
   return(0);
 
@@ -418,15 +452,12 @@ bool find_top_knn_users_cosine_normalized
       auto train_movie_rating = train_user_movies[wuser_id].find( test_movie.first );
       if( train_movie_rating != train_user_movies[wuser_id].end() ) {
 	++matched_count;
-	uint32_t a = trunc(test_movie.second);
-	uint32_t b = trunc((*train_movie_rating).second);
+	//uint32_t a = trunc(test_movie.second);
+	//uint32_t b = trunc((*train_movie_rating).second);
 	//	uint32_t a = round(test_movie.second);
 	//	uint32_t b = round((*train_movie_rating).second);
-	//	float    a = test_movie.second;
-	//	float    b = (*train_movie_rating).second;
-		//	AB += static_cast<float>(a)*static_cast<float>(b);
-		//	A2 += static_cast<float>(a)*static_cast<float>(a);
-		//	B2 += static_cast<float>(b)*static_cast<float>(b);
+	float    a = test_movie.second;
+	float    b = (*train_movie_rating).second;
 	AB += a*b;
 	A2 += a*a;
 	B2 += b*b;
@@ -513,4 +544,55 @@ float compute_user_bias( uint32_t user_id,
 
   return( bias / N );
   
+}
+
+void extract_fold_user_ids( const std::vector<uint32_t> & random_user_ids,
+			    uint32_t fold,
+			    uint32_t total_folds,
+			    std::vector<uint32_t> & train_user_ids,
+			    std::vector<uint32_t> & test_user_ids ) {
+
+  float test_set_percent    = 1.0f / static_cast<float>( total_folds );
+  float train_set_percent   = 1.0f - test_set_percent;
+  uint32_t train_user_count = std::round( train_set_percent * random_user_ids.size() );
+  uint32_t test_user_count  = random_user_ids.size() - train_user_count;
+
+  // Get test fold start and end.
+  uint32_t test_fold_start_index = test_set_percent * static_cast<float>(random_user_ids.size());
+  uint32_t test_fold_end_index   = test_fold_start_index + test_user_count;
+
+  for( uint32_t index = 0; index < random_user_ids.size(); ++index ) {
+    if( (index >= test_fold_start_index) && (index < test_fold_end_index) ) {
+      test_user_ids.push_back( random_user_ids[index] );
+    } else {
+      train_user_ids.push_back( random_user_ids[index] );
+    }
+  }
+  
+}
+
+void extract_fold_user_ids_percentage_method( const std::vector<uint32_t> & random_user_ids,
+					      float train_set_percent,
+					      std::vector<uint32_t> & train_user_ids,
+					      std::vector<uint32_t> & test_user_ids ) {
+ 
+  uint32_t train_user_count = std::round( train_set_percent * random_user_ids.size() );
+  uint32_t test_user_count = random_user_ids.size() - train_user_count;
+
+  auto train_start = random_user_ids.begin();
+  auto train_end   = random_user_ids.begin() + train_user_count;
+  auto test_start  = random_user_ids.begin() + train_user_count;
+  auto test_end    = random_user_ids.end();
+  
+  std::vector<uint32_t> train_user_ids_int(train_start, train_end);
+  std::vector<uint32_t> test_user_ids_int(test_start, test_end);
+
+  train_user_ids = train_user_ids_int;
+  test_user_ids = test_user_ids_int;
+
+  //std::cout << "train_user_count  = " << train_user_count << std::endl;
+  //std::cout << "train vector size = " << train_user_ids.size() << std::endl;
+  //std::cout << "test_user_count   = " << test_user_count << std::endl;
+  //std::cout << "test vector size  = " << test_user_ids.size() << std::endl;
+
 }
