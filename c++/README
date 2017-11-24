@@ -131,3 +131,17 @@ from consideration. Slope-one works best in most cases, except for the sparsest 
 where NMF works best.
 4. In cases requiring real-time computation, the user average is the best algorithm, except
 for a small region where item average is preferred.
+
+Removing the effects of bias:
+
+For all movies a user rate get the difference between their rating for a movie and the average
+rating of that movie.  Sum them up an divide by number of movies.  Treat this number as their
+bias.  If it's > 0 then their matched score should be lowered by the bias and vice versa.
+
+This is also true of the test user.  On receiving a bias corrected score (unbiased), their bias
+must be added to the final bias for the score.
+
+Similarities should be computed on biased corrected ratings.  Will follow the paper that suggests
+to unbias a row, get the overall average rating and subtract from each rating to get an unbiased
+indicator.  This is purely for similarity purposes.  Once a similarity is selected, those particular
+scores are not needed.

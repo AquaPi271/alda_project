@@ -20,6 +20,7 @@ struct nn {
 uint32_t Gk = 1;
 float Gt = 0.95;
 
+void add_to_knn_pearson( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn );
 void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn );
 bool find_top_knn_users_cosine_record_debug( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
 					     std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
@@ -132,6 +133,10 @@ auto main( int argc, char **argv ) -> int {
 
     std::vector<uint32_t> matched_users = {};
     
+    //if( find_top_knn_users_cosine_record_debug( train_movie_users, train_users, test_users,
+    //						tu.first, test_movie,
+    //						matched_users ) ) {
+    
     if( find_top_knn_users_cosine_record_debug( train_movie_users, train_users, test_users,
 						tu.first, test_movie,
 						matched_users ) ) {
@@ -140,7 +145,7 @@ auto main( int argc, char **argv ) -> int {
       float ratings_sum = 0;
       float ratings_count = 0;
       for( auto & mu : matched_users ) {
-	ratings_sum += train_users[mu][test_movie];
+	ratings_sum += static_cast<float>(train_users[mu][test_movie]);
 	ratings_count += 1.0f;
       }
       if( ratings_count <= 0 ) {
@@ -152,13 +157,13 @@ auto main( int argc, char **argv ) -> int {
       }	else {
 	float rating = ratings_sum / ratings_count;  
 	auto test_rating = static_cast<float>((*item).second);
-	//std::cout << "rating = " << rating << " actual = " << test_rating << std::endl;
+	std::cout << "rating = " << rating << " actual = " << test_rating << std::endl;
 	rmse_N += ((test_rating - rating)*(test_rating - rating));
 	++rmse_D;
-	//if( rmse_D > 0 ) {
-	//	std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
-	//	  "  cold start count = " << cold_start_count << " / " << count << std::endl;
-	//}
+	if( rmse_D > 0 ) {
+		std::cout << "RMSE = " << sqrt( rmse_N / rmse_D ) <<
+		  "  cold start count = " << cold_start_count << " / " << count << std::endl;
+	}
       }
     } else { // Not one else rated!  Grab average as best recourse.      
       auto test_rating = static_cast<float>((*item).second);
@@ -183,6 +188,82 @@ auto main( int argc, char **argv ) -> int {
 }
 
 bool find_top_knn_users_pearson( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
+				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
+				 uint32_t user_id,
+				 uint32_t requested_movie,
+				 std::vector<uint32_t> & matched_user_ids) {
+  // Get all training users that rated the requested movie.
+  std::vector<uint32_t> users_who_watched = {};
+  for( auto & train_mu : train_movie_users[requested_movie] ) {
+    users_who_watched.push_back( train_mu.first );
+  }
+  // Simplify lookup for the test user.  Just need to create movie/ratings hash for it.
+  std::map<uint16_t,uint8_t> test_user_movie = {};
+  for( auto & tum : test_users[user_id] ) {
+    if( tum.first != requested_movie ) {
+      test_user_movie[tum.first] = tum.second;
+    }
+  }
+  auto tum_rated = test_user_movie.size();
+  if( tum_rated == 0 ) {
+    return( false );
+  }
+  std::vector<nn> knn = {};
+  for( auto & wuser_id : users_who_watched ) {
+    uint32_t matched_count = 0;
+    std::vector<uint32_t> a = {};
+    std::vector<uint32_t> b = {};
+    for( auto & test_movie : test_user_movie ) {
+      auto train_movie_rating = train_user_movies[wuser_id].find( test_movie.first );
+      if( train_movie_rating != train_user_movies[wuser_id].end() ) {
+	++matched_count;
+	a.push_back( test_movie.second );
+	b.push_back( (*train_movie_rating).second );
+      }
+    }
+    if( matched_count > 0 ) {
+      uint32_t a_sum = 0;
+      uint32_t b_sum = 0;
+      for( auto & n : a ) {
+	a_sum += n;
+      }
+      for( auto & n : b ) {
+	b_sum += n;
+      }
+      float a_avg = static_cast<float>(a_sum) / static_cast<float>( a.size() );
+      float b_avg = static_cast<float>(b_sum) / static_cast<float>( b.size() );
+      
+      float AB = 0;
+      float A2 = 0;
+      float B2 = 0;
+      
+      for( uint32_t i = 0; i < a.size(); ++i ) {
+	float adiff = a_avg - static_cast<float>(a[i]);
+	float bdiff = b_avg - static_cast<float>(b[i]);
+	AB += (adiff * bdiff);
+	A2 += (adiff * adiff);
+	B2 += (bdiff * bdiff);	
+      }
+      float D = sqrt(A2) * sqrt(B2);
+      if( D != 0 ) {
+	auto pearson_dist = static_cast<float>(AB) / D;
+	add_to_knn_pearson( wuser_id, matched_count, pearson_dist, knn );
+	//std::cout << pearson_dist << std::endl;
+      }
+    }
+  }
+
+  for( auto & n : knn ) {  
+    matched_user_ids.push_back( n.user_id );
+  }
+  
+  //std::cout << users_above_threshold << std::endl;
+
+  return( true );
+}
+
+bool find_top_knn_users_pearson_a( std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
 				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
 				 std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
 				 uint32_t user_id,
@@ -503,7 +584,7 @@ bool find_top_knn_users_cosine_record( std::map<uint16_t,std::map<uint32_t,uint8
   return( true );
 }
 
-void add_to_knn_a( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn ) {
+void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn ) {
 
   uint32_t k = Gk;
 
@@ -562,12 +643,37 @@ void add_to_knn_b( uint32_t wuser_id, uint32_t matched_count, float cos_dist, st
   
 }
 
-void add_to_knn( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn ) {
+void add_to_knn_threshold( uint32_t wuser_id, uint32_t matched_count, float cos_dist, std::vector<nn> & knn ) {
 
   float t = Gt;
 
   if( cos_dist > t ) {
     knn.push_back( {wuser_id, matched_count, cos_dist} );
+  }
+  
+}
+
+void add_to_knn_pearson( uint32_t wuser_id, uint32_t matched_count, float dist, std::vector<nn> & knn ) {
+
+  uint32_t k = Gk;
+
+  if( knn.size() < k ) {
+    knn.push_back( {wuser_id, matched_count, dist} );
+  } else {
+    // Ignore matched count for now!
+    float lowest_dist = knn[0].cos_dist;
+    int32_t lowest_index = -1;
+    uint32_t index = 0;
+    for( auto & i : knn ) {
+      if( (lowest_dist < i.cos_dist)  ) {
+	lowest_dist = i.cos_dist;
+	lowest_index = index;
+      }
+      ++index;
+    }
+    if( lowest_index != -1 ) {
+      knn[lowest_index] = {wuser_id, matched_count, dist};
+    }
   }
   
 }

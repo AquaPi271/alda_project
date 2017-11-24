@@ -9,7 +9,8 @@ OBJECTS = objects/load_data.o \
 
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
      read_netflix_binary base_metric ubcf_metric generate_sample_movies_binary_buckets \
-     read_netflix_binary_densities generate_sample_movies_densities_binary
+     read_netflix_binary_densities generate_sample_movies_densities_binary \
+     ubcf_metric_normalized
 
 days_since_2000 : bin/days_since_2000
 	@echo
@@ -33,6 +34,9 @@ read_netflix_binary_densities : bin/read_netflix_binary_densities
 	@echo
 
 base_metric : bin/base_metric
+	@echo
+
+ubcf_metric_normalized : bin/ubcf_metric_normalized
 	@echo
 
 ubcf_metric : bin/ubcf_metric
