@@ -1,5 +1,7 @@
 NN-search
 
+bin/base_metric.exe TOP_SAMPLES/TSAMPLE_M1000_U500 2 10 0.8
+RMSE = 0.936467 folds = 10
 ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M1000_U500 2 10 0.8 k = * c
 Final RMSE = 1.06989  k = 1
 Final RMSE = 1.00783  k = 2
@@ -21,6 +23,8 @@ Final RMSE = 0.919204  k = 17
 Final RMSE = 0.917446  k = 18
 Final RMSE = 0.916902  k = 19
 
+bin/base_metric.exe TOP_SAMPLES/TSAMPLE_M3000_U500 2 10 0.8
+RMSE = 0.980216 folds = 10
 ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M3000_U500 2 10 0.8 k = * c
 Final RMSE = 1.28523  k = 1
 Final RMSE = 1.06417  k = 2
@@ -41,6 +45,8 @@ Final RMSE = 0.942158  k = 16
 Final RMSE = 0.942806  k = 17
 Final RMSE = 0.938722  k = 18
 
+bin/base_metric.exe TOP_SAMPLES/TSAMPLE_M3000_U500 2 10 0.8
+RMSE = 0.980216 folds = 10
 bin/ubcf_metric.exe TOP_SAMPLES/TSAMPLE_M1000_U500 2 10 0.8 k=* p
 Final RMSE = 1.06989  k = 1
 Final RMSE = 0.968483  k = 2
@@ -61,3 +67,8 @@ Final RMSE = 0.881055  k = 16
 Final RMSE = 0.878462  k = 17
 Final RMSE = 0.876393  k = 18
 Final RMSE = 0.875314  k = 19
+
+bin/base_metric.exe SAMPLED_DATASETS_BINARY/S1_M2000_U55000 2 10 0.8
+RMSE = 1.06251 folds = 10
+bin/ubcf_metric.exe SAMPLED_DATASETS_BINARY/S1_M2000_U55000 2 10 0.8 10 c
+Final RMSE = 1.12579  k = 10

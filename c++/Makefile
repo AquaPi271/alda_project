@@ -4,7 +4,8 @@
 
 INCLUDES = -I ./include
 
-OBJECTS = objects/load_data.o \
+OBJECTS = objects/fold_generation.o \
+          objects/load_data.o \
           objects/statistics.o
 
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
