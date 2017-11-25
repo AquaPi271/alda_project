@@ -10,7 +10,7 @@ OBJECTS = objects/fold_generation.o \
 
 all: days_since_2000 generate_all_movies_binary generate_sample_movies_binary \
      read_netflix_binary base_metric ubcf_metric generate_sample_movies_binary_buckets \
-     read_netflix_binary_densities generate_sample_movies_densities_binary 
+     read_netflix_binary_densities generate_sample_movies_densities_binary ibcf_metric \
 
 days_since_2000 : bin/days_since_2000
 	@echo
@@ -40,6 +40,9 @@ ubcf_metric_normalized : bin/ubcf_metric_normalized
 	@echo
 
 ubcf_metric : bin/ubcf_metric
+	@echo
+
+ibcf_metric : bin/ibcf_metric
 	@echo
 
 bin/% : objects/%.o $(OBJECTS)
