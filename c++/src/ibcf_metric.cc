@@ -588,6 +588,146 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
   // Initialize all slots to be used.
 
   std::vector<uint16_t> movie_ids = {};
+//
+//  for( auto & m_u_r : movies ) {
+//    movie_ids.push_back( m_u_r.first );
+//  }
+//
+//  std::sort( movie_ids.begin(), movie_ids.end() );
+//  
+//  for( uint32_t first = 0; first < movie_ids.size() - 1; ++first ) {
+//    for( uint32_t second = first + 1; second < movie_ids.size(); ++second ) {
+//      ibcf_matrix[first][second] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+//    }
+//  }
+
+  uint32_t movie_combo_lookup[17701][17701];
+  std::vector<similarity_info> similarity_matrix = {};
+
+  for( uint32_t first = 0; first < 17701; ++first ) {
+    for( uint32_t second = first + 1; second < 17701; ++second ) {
+      movie_combo_lookup[first][second] = 0;
+    }
+  }
+
+      
+  exit(1);
+  
+  // Slots initialized, add-in metrics.
+
+  std::cerr << "Pass 1... " << std::endl;
+  
+  for( auto & u_m_r : Norm_train_users ) {    
+    // Wish I could mess with iterators, but I need to get project done.
+    auto & m_r = u_m_r.second;
+    std::vector<uint16_t> Nmovies = {};
+    for( auto & m : u_m_r.second ) {
+      Nmovies.push_back( m.first );
+    }
+    std::sort( Nmovies.begin(), Nmovies.end() );
+    for( uint32_t first = 0; first < Nmovies.size() - 1; ++first ) {
+      //auto & i_m_f = ibcf_matrix[first];
+      for( uint32_t second = first + 1; second < Nmovies.size(); ++second ) {
+	// Does vector for this exist?
+	uint32_t first_movie = Nmovies[first];
+	uint32_t second_movie = Nmovies[second];
+	uint32_t lookup_index = movie_combo_lookup[first_movie][second_movie];
+	if( lookup_index == 0 ) {
+	  movie_combo_lookup[first_movie][second_movie] = similarity_matrix.size();
+	  lookup_index = similarity_matrix.size();
+	  similarity_matrix.push_back( { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } );
+	}
+	if( pearson ) {
+	  similarity_matrix[lookup_index].A_sum += m_r[first_movie];
+	  similarity_matrix[lookup_index].B_sum += m_r[second_movie];
+	  similarity_matrix[lookup_index].count += 1.0;
+	} else {
+	  float A = m_r[movie_ids[first]];
+	  float B = m_r[movie_ids[second]];
+	  similarity_matrix[lookup_index].A_sum += m_r[first_movie];
+	  similarity_matrix[lookup_index].B_sum += m_r[second_movie];
+	  similarity_matrix[lookup_index].count += 1.0;
+	}
+//	  i_m_f_s.A_sum += m_r[movie_ids[first]];
+//	  i_m_f_s.B_sum += m_r[movie_ids[second]];
+//	  i_m_f_s.count += 1.0;
+//	} else {
+//	  float A = m_r[movie_ids[first]];
+//	  float B = m_r[movie_ids[second]];
+//	  i_m_f_s.numerator_AB += (A*B);
+//	  i_m_f_s.denominator_A2 += (A*A);
+//	  i_m_f_s.denominator_B2 += (B*B);
+//	}
+      }
+    }
+  }
+
+  exit(1);
+
+  std::cerr << "Pass 2 (Averages construction)... " << std::endl;
+  // Compute the averages now.
+
+  for( auto & i : ibcf_matrix ) {
+    for( auto & ii : ibcf_matrix[i.first] ) {
+      if( pearson ) {
+	ii.second.A_average = ii.second.A_sum / ii.second.count;
+	ii.second.B_average = ii.second.B_sum / ii.second.count;
+      } else {
+	float D = sqrt( ii.second.denominator_A2 ) * sqrt( ii.second.denominator_B2 );
+	ii.second.similarity = ii.second.numerator_AB / D;
+      }
+    }
+  }
+
+  if( cosine ) {
+    return;
+  }
+  
+  std::cerr << "Pass 3... " << std::endl;
+  
+  for( auto & u_m_r : Norm_train_users ) {    
+    // Wish I could mess with iterators, but I need to get project done.
+    auto & m_r = u_m_r.second;
+    std::vector<uint16_t> Nmovies = {};
+    for( auto & m : u_m_r.second ) {
+      Nmovies.push_back( m.first );
+    }
+    std::sort( Nmovies.begin(), Nmovies.end() );
+    for( uint32_t first = 0; first < Nmovies.size() - 1; ++first ) {
+      auto & i_m_f = ibcf_matrix[first];
+      for( uint32_t second = first + 1; second < Nmovies.size(); ++second ) {
+	auto & i_m_f_s = i_m_f[second];
+	float adiff = i_m_f_s.A_average - m_r[movie_ids[first]];
+	float bdiff = i_m_f_s.B_average - m_r[movie_ids[second]];
+	i_m_f_s.numerator_AB += (adiff * bdiff);
+	i_m_f_s.denominator_A2 += (adiff * adiff);
+	i_m_f_s.denominator_B2 += (bdiff * bdiff);
+      }
+    }
+  }
+
+  std::cerr << "Pass 4 (Similarity construction)... " << std::endl;
+  
+  // Compute the averages now.
+
+  for( auto & i : ibcf_matrix ) {
+    for( auto & ii : ibcf_matrix[i.first] ) {
+      float D = sqrt(ii.second.denominator_A2) * sqrt(ii.second.denominator_B2);
+      ii.second.similarity = ii.second.numerator_AB / D;
+    }
+  }
+  
+}
+
+void build_item_item_matrix_working( std::map<uint32_t,std::map<uint16_t,float>> & Norm_train_users,
+				     std::map<uint16_t,std::map<uint32_t,uint8_t>> & movies,
+				     std::map<uint32_t,std::map<uint32_t,similarity_info>> & ibcf_matrix,
+				     bool cosine,
+				     bool pearson ) {
+  
+  // Initialize all slots to be used.
+
+  std::vector<uint16_t> movie_ids = {};
 
   for( auto & m_u_r : movies ) {
     movie_ids.push_back( m_u_r.first );
