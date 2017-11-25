@@ -5,8 +5,7 @@
 #include <vector>
 
 struct nn {
-  uint32_t user_id;
-  uint32_t matched_count;
+  uint32_t movie_id;
   float    dist;
 };
 
@@ -22,41 +21,20 @@ struct similarity_info {
   float similarity;
 };
 
-bool find_top_knn_users_cosine
-( uint32_t k,
-  std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
-  uint32_t user_id,
-  uint32_t requested_movie,
-  std::vector<uint32_t> & matched_user_ids );
-bool find_top_knn_users_pearson
-( uint32_t k,
-  std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_user_movies,
-  std::map<uint32_t,std::map<uint16_t,uint8_t>> & test_users,
-  uint32_t user_id,
-  uint32_t requested_movie,
-  std::vector<uint32_t> & matched_user_ids );
-bool find_top_knn_users_cosine_normalized
-( uint32_t k,
-  std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-  std::map<uint32_t,std::map<uint16_t,float>> & train_user_movies,
+bool find_top_knn_movies_cosine_normalized
+( uint32_t k,  
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint32_t> & matched_user_ids );
-bool find_top_knn_users_pearson_normalized
-( uint32_t k,
-  std::map<uint16_t,std::map<uint32_t,uint8_t>> & train_movie_users,
-  std::map<uint32_t,std::map<uint16_t,float>> & train_user_movies,
+  std::vector<uint16_t> & matched_movies );
+bool find_top_knn_movies_pearson_normalized
+( uint32_t k,  
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint32_t> & matched_user_ids );
+  std::vector<uint16_t> & matched_movies );
 void add_to_knn( uint32_t k,
-		 uint32_t wuser_id,
-		 uint32_t matched_count,
+		 uint32_t wmovie_id,
 		 float dist,
 		 std::vector<nn> & knn );
 void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
