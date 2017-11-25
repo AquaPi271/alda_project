@@ -176,4 +176,4 @@ Test user comes along with X items and wants to find rating they'd give to one u
 For their ratings of item M look at how similar it is to objective.  Use weighted averages of user's ratings, based on
 similarity to get objective score.
 
-Truncation appears to produce remarkable results.  Is this effect real?
+Truncation appears to produce remarkable results.  Is this effect real?  ( why did this seem to work ?)

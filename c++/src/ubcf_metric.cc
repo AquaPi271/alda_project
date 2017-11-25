@@ -118,9 +118,9 @@ auto main( int argc, char **argv ) -> int {
   
     for( auto & tu : test_users ) {
       ++count;
-      if( count % 100 == 0 ) {
-	std::cout << count << std::endl;
-      }
+      //if( count % 100 == 0 ) {
+      //std::cout << count << std::endl;
+      //}
       auto movies_rated = tu.second.size();
       std::uniform_int_distribution<uint32_t> dist(0, movies_rated - 1);
       auto random_offset = dist(random_generator);
@@ -161,9 +161,18 @@ auto main( int argc, char **argv ) -> int {
 	  auto avg_rating = train_movie_averages[test_movie];
 	  rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
 	  ++rmse_D;
-	}	else {
+	} else {
 	  float rating = ratings_sum / ratings_count + test_user_bias;
 	  auto test_rating = static_cast<float>((*item).second);
+
+	  // Blend if below k.
+	  auto test_movie = (*item).first;
+	  auto avg_rating = train_movie_averages[test_movie];
+	  float frac_w = static_cast<float>(k - matched_users.size()) / static_cast<float>( k );
+	  float knn_w = 1.0 - frac_w;
+
+	  rating = frac_w * avg_rating + knn_w * rating;
+	  
 	  rmse_N += ((test_rating - rating)*(test_rating - rating));
 	  ++rmse_D;
 	}

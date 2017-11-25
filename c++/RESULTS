@@ -72,3 +72,6 @@ bin/base_metric.exe SAMPLED_DATASETS_BINARY/S1_M2000_U55000 2 10 0.8
 RMSE = 1.06251 folds = 10
 bin/ubcf_metric.exe SAMPLED_DATASETS_BINARY/S1_M2000_U55000 2 10 0.8 10 c
 Final RMSE = 1.12579  k = 10
+
+Global blend:
+Final RMSE = 1.12412  k = 10
