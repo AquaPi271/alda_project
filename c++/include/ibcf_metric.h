@@ -26,13 +26,13 @@ bool find_top_knn_movies_cosine_normalized
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint16_t> & matched_movies );
+  std::vector<nn> & matched_movies );
 bool find_top_knn_movies_pearson_normalized
 ( uint32_t k,  
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint16_t> & matched_movies );
+  std::vector<nn> & matched_movies );
 void add_to_knn( uint32_t k,
 		 uint32_t wmovie_id,
 		 float dist,

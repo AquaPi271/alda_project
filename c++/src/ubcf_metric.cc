@@ -500,7 +500,7 @@ void add_to_knn( uint32_t k, uint32_t wuser_id, uint32_t matched_count,
     int32_t lowest_index = -1;
     uint32_t index = 0;
     for( auto & i : knn ) {
-      if( (lowest_dist < i.dist)  ) {
+      if( (i.dist <= lowest_dist)  ) {
 	lowest_dist = i.dist;
 	lowest_index = index;
       }

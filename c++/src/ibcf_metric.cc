@@ -152,7 +152,7 @@ auto main( int argc, char **argv ) -> int {
       auto test_movie = (*item).first;
       auto avg_rating = train_movie_averages[test_movie];
       
-      std::vector<uint16_t> matched_movies = {};
+      std::vector<nn> matched_movies = {};
       
       //    if( find_top_knn_users_cosine( k, train_movie_users, train_users, test_users,
       //				   tu.first, test_movie,
@@ -160,32 +160,43 @@ auto main( int argc, char **argv ) -> int {
       bool warm_reading = false;
       if( cosine ) {
 	warm_reading = find_top_knn_movies_cosine_normalized( k, Norm_test_users, tu.first, test_movie, matched_movies );
-	//warm_reading = find_top_knn_users_cosine_normalized( k, train_movie_users, Norm_train_users, Norm_test_users,
-	//						     tu.first, test_movie,
-	//						     matched_users );
-
-	// Got similarity matrix.
-	// Got test user and ratings.
-	// Don't need anything more -- no need to separate pearson and cosine, at least as much.
-	
-	//	warm_reading = find_top_knn_movies_cosine_normalized( k, train_movie_users, Norm_train_users, Norm_test_users,
-	//						      tu.first, test_movie,
-	//						      matched_movies );
       } else if( pearson ) {
 	warm_reading = find_top_knn_movies_pearson_normalized( k, Norm_test_users, tu.first, test_movie, matched_movies );
       }
       if( warm_reading ) {
 	// Get matched movies  ratings.
-	//std::cout << "matched user = " << matched_users[0] << " ";
 	float ratings_sum = 0;
 	float ratings_count = 0;
-	//float test_user_bias = compute_user_bias( tu.first, test_users, train_movie_averages, true, test_movie );
 
+	float similarity_sum = 0.0;
+	for( auto & mm : matched_movies ) {
+	  similarity_sum += mm.dist;
+	}
+	
+	for( auto & mm : matched_movies ) {
+	  // Check to see if user actually rated the movie.
+
+	  if( test_users[tu.first].find(mm.movie_id) == test_users[tu.first].end() ) {
+	    // std::cout << "NOT FOUND" << std::endl;
+	  } else {
+	  
+	  // Get the rating that the test user had for this movie, do not need to discount bias because built-in for user.	  
+	    ratings_sum += (static_cast<float>(test_users[tu.first][mm.movie_id]) * (mm.dist) / similarity_sum);
+	    ratings_count += 1.0f;
+	  }
+	}
+	
+	
+	/*	float similarity_sum_squared = 0.0;
+	for( auto & mm : matched_movies ) {
+	  similarity_sum_squared += (mm.dist * mm.dist);
+	}
+	
 	for( auto & mm : matched_movies ) {
 	  // Get the rating that the test user had for this movie, do not need to discount bias because built-in for user.	  
-	  ratings_sum += static_cast<float>(test_users[tu.first][mm]);
+	  ratings_sum += (static_cast<float>(test_users[tu.first][mm.movie_id]) * (mm.dist*mm.dist) / similarity_sum_squared);
 	  ratings_count += 1.0f;
-	}
+	  }*/
 	
 	if( ratings_count <= 0.0f ) {
 	  auto test_rating = static_cast<float>((*item).second);
@@ -194,7 +205,7 @@ auto main( int argc, char **argv ) -> int {
 	  rmse_N += ((test_rating - avg_rating)*(test_rating - avg_rating));
 	  ++rmse_D;
 	} else {
-	  float rating = ratings_sum / ratings_count;  // NOTE: bias not needed here because using own ratings.
+	  float rating = ratings_sum;   // NOTE: bias not needed here because using own ratings.
 	  auto test_rating = static_cast<float>((*item).second);
 
 	  // Blend if below k.
@@ -246,10 +257,8 @@ bool find_top_knn_movies_cosine_normalized
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint16_t> & matched_movies ) {
+  std::vector<nn> & matched_movies ) {
 
-  std::vector<nn> knn = {};
-  
   // Need to probe triangular matrix for similarity measurements, first horizontal, then vertical.
 
   uint32_t matched_count = 0;
@@ -258,22 +267,18 @@ bool find_top_knn_movies_cosine_normalized
     uint32_t lookup_index = movie_combo_lookup[requested_movie][c];
     if( lookup_index != -1 ) {      
       float dist = similarity_vector[lookup_index].similarity;
-      add_to_knn( k, c, dist, knn );
+      add_to_knn( k, c, dist, matched_movies );
     }
   }
   for( auto r = 0; r < dim; ++r ) {
     uint32_t lookup_index = movie_combo_lookup[r][requested_movie];
     if( lookup_index != -1 ) { 
       float dist = similarity_vector[lookup_index].similarity;     
-      add_to_knn( k, r, dist, knn );
+      add_to_knn( k, r, dist, matched_movies );
     }
   }
 
-  for( auto & n : knn ) {  
-    matched_movies.push_back( n.movie_id );
-  }
-
-  if( knn.size() == 1 ) {
+  if( matched_movies.size() == 1 ) {
     return(false);
   }
   
@@ -285,10 +290,8 @@ bool find_top_knn_movies_pearson_normalized
   std::map<uint32_t,std::map<uint16_t,float>> & test_users,
   uint32_t user_id,
   uint32_t requested_movie,
-  std::vector<uint16_t> & matched_movies ) {
+  std::vector<nn> & matched_movies ) {
 
-  std::vector<nn> knn = {};
-  
   // Need to probe triangular matrix for similarity measurements, first horizontal, then vertical.
 
   uint32_t matched_count = 0;
@@ -297,22 +300,18 @@ bool find_top_knn_movies_pearson_normalized
     uint32_t lookup_index = movie_combo_lookup[requested_movie][c];
     if( lookup_index != -1 ) {      
       float dist = similarity_vector[lookup_index].similarity;
-      add_to_knn( k, c, dist, knn );
+      add_to_knn( k, c, dist, matched_movies );
     }
   }
   for( auto r = 0; r < dim; ++r ) {
     uint32_t lookup_index = movie_combo_lookup[r][requested_movie];
     if( lookup_index != -1 ) { 
-      float dist = similarity_vector[lookup_index].similarity; 
-      add_to_knn( k, r, dist, knn );
+      float dist = similarity_vector[lookup_index].similarity;     
+      add_to_knn( k, r, dist, matched_movies );
     }
   }
 
-  for( auto & n : knn ) {
-    matched_movies.push_back( n.movie_id );
-  }
-
-  if( knn.size() == 1 ) {
+  if( matched_movies.size() == 1 ) {
     return(false);
   }
   
@@ -360,6 +359,7 @@ void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
     float average = static_cast<float>( movie_rating_sum ) / static_cast<float>( movie_rating_count );
     for( auto & m : u_m_r[u.first] ) {
       u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
+      //u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second );
     }
   }
 }
@@ -423,7 +423,7 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
   
   // Slots initialized, add-in metrics.
 
-  std::cerr << "Pass 1... " << std::endl;
+  //  std::cerr << "Pass 1... " << std::endl;
 
   for( auto & u_m_r : Norm_train_users ) {    // Go through actual data set by user to get their item-item ratings.
     auto & m_r = u_m_r.second;                // Get this users movie/rating pairs.
@@ -491,7 +491,7 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
 
   // Now just need to deal with Pearson which needs another couple of passes.
 
-  std::cerr << "Pass 2 (Averages construction)... " << std::endl;
+  //  std::cerr << "Pass 2 (Averages construction)... " << std::endl;
   
   for( uint32_t first = 0; first < dim; ++first ) {
     for( uint32_t second = first+1; second < dim; ++second ) {
@@ -504,7 +504,7 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
     }
   }
   
-  std::cerr << "Pass 3... " << std::endl;
+  //  std::cerr << "Pass 3... " << std::endl;
   
   for( auto & u_m_r : Norm_train_users ) {    // Go through actual data set by user to get their item-item ratings.
     auto & m_r = u_m_r.second;                // Get this users movie/rating pairs.
@@ -526,11 +526,11 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
 	float adiff;
 	float bdiff;
 	if( left_movie == movie_id1 ) {
-	  adiff = vec.A_average - movie_rating1;
-	  bdiff = vec.B_average - movie_rating2;
+	  adiff = movie_rating1 - vec.A_average;
+	  bdiff = movie_rating2 - vec.B_average;
 	} else {
-	  adiff = vec.A_average - movie_rating1;
-	  bdiff = vec.B_average - movie_rating2;
+	  adiff = movie_rating2 - vec.A_average;
+	  bdiff = movie_rating1 - vec.B_average;
 	}
 	vec.numerator_AB   += (adiff * bdiff);
 	vec.denominator_A2 += (adiff * adiff);
@@ -539,7 +539,7 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
     }
   }
 
-  std::cerr << "Pass 4 (Similarity construction)... " << std::endl;
+  //  std::cerr << "Pass 4 (Similarity construction)... " << std::endl;
 
   for( uint32_t first = 0; first < dim; ++first ) {
     for( uint32_t second = first+1; second < dim; ++second ) {
