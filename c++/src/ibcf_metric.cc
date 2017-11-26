@@ -21,8 +21,8 @@
   
 auto main( int argc, char **argv ) -> int {
 
-  if( argc != 7 ) {
-    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <folds> <train_test_percent> <k> <similarity_method>"
+  if( argc != 8 ) {
+    std::cerr << "Usage: " << argv[0] << " <filename> <random_seed> <folds> <train_test_percent> <k> <similarity_method> <normalization>"
 	      << std::endl;
     exit(1);
   }
@@ -33,6 +33,11 @@ auto main( int argc, char **argv ) -> int {
   float       train_set_percent = std::stof( argv[4] );
   uint32_t    k                 = std::stoi( argv[5] );
   std::string method_arg{ argv[6] };
+  uint32_t    normalization     = std::stoi( argv[7] );
+  bool normalize = false;
+  if( normalization == 1 ) {
+    normalize = true;
+  }
   bool pearson = false;
   bool cosine  = false;
   if( method_arg == "p" ) {
@@ -119,8 +124,8 @@ auto main( int argc, char **argv ) -> int {
   
     // Create normalized versions of the above.
 
-    normalize_from( train_users, Norm_train_users );
-    normalize_from( test_users, Norm_test_users );
+    normalize_from( train_users, Norm_train_users, normalize );
+    normalize_from( test_users, Norm_test_users, normalize );
 
     uint32_t movie_count = train_movie_users.size();
     uint32_t user_count = Norm_train_users.size();
@@ -359,7 +364,8 @@ void add_to_knn( uint32_t k, uint32_t wmovie_id, float dist, std::vector<nn> & k
 }
 
 void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
-		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT ) {
+		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT,
+		     bool normalize ) {
   // Copy from ints to floats
   for( auto & u : u_m_r ) {
     uint32_t movie_rating_sum = 0;
@@ -371,8 +377,11 @@ void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
     }
     float average = static_cast<float>( movie_rating_sum ) / static_cast<float>( movie_rating_count );
     for( auto & m : u_m_r[u.first] ) {
-      u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
-      //u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second );
+      if( normalize ) {
+	u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second ) - average;
+      } else {
+	u_m_r_OUT[u.first][m.first] = static_cast<float>( m.second );
+      }
     }
   }
 }
@@ -402,23 +411,31 @@ float compute_user_bias( uint32_t user_id,
   
 }
 
-void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_train_users,      // Normalized ratings u_m_r
-			     uint32_t user_count,
-			     uint32_t movie_count,
-			     std::map<uint16_t,uint32_t> & movie_to_index_map,
-			     float ** movie_movie,			     
-			     bool cosine,
-			     bool pearson ) {
+void build_item_item_matrix_working( std::map<uint32_t,std::map<uint16_t,float>> & Norm_train_users,      // Normalized ratings u_m_r
+				     uint32_t user_count,
+				     uint32_t movie_count,
+				     std::map<uint16_t,uint32_t> & movie_to_index_map,
+				     float ** movie_movie,			     
+				     bool cosine,
+				     bool pearson ) {
   
   // Allocate matrix.
 
   uint32_t rows = user_count;
   uint32_t columns = movie_count;
-  float ** user_movie = new float * [rows];
-  for( uint32_t i = 0; i < rows; ++i ) {
-    user_movie[i] = new float[columns];
-    for( uint32_t j = 0; j < columns; ++j ) {
-      user_movie[i][j] = 0.0f;
+
+  //float ** user_movie = new float * [rows];
+  //for( uint32_t i = 0; i < rows; ++i ) {
+  //  user_movie[i] = new float[columns];
+  //  for( uint32_t j = 0; j < columns; ++j ) {
+  //    user_movie[i][j] = 0.0f;
+  //  }
+  //}
+
+  float * user_movie1D = new float[rows * columns];
+  for(uint32_t i = 0; i < rows; ++i) {
+    for(uint32_t j = 0; j < columns; ++j ) {
+      user_movie1D[i*movie_count + j] = 0.0f;
     }
   }
   
@@ -434,17 +451,17 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
       if( mit == movie_to_index_map.end() ) {
 	movie_to_index_map[m_r.first] = movie_index;
 	//index_to_movie_map[movie_index] = m_r.first;
-	user_movie[user_index][movie_index] = m_r.second;  // Place rating in matrix.
+	//user_movie[user_index][movie_index] = m_r.second;  // Place rating in matrix.
+	user_movie1D[user_index*movie_count+movie_index] = m_r.second;  // Place rating in matrix.
 	++movie_index;
       } else {
-	user_movie[user_index][(*mit).second] = m_r.second;  // Place rating in matrix.	
+	//user_movie[user_index][(*mit).second] = m_r.second;  // Place rating in matrix.	
+	user_movie1D[user_index*movie_count + (*mit).second] = m_r.second;  // Place rating in matrix.	
       }
     }
     ++user_index;
   }
-
-  // Run with text output to see how it goes.
-
+	   
   for( uint32_t movie_index_left = 0; movie_index_left < movie_count - 1; ++movie_index_left ) {
     for( uint32_t movie_index_right = movie_index_left + 1; movie_index_right < movie_count; ++movie_index_right ) {
       float A_sum = 0.0f;
@@ -455,8 +472,10 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
       float B2_sum = 0.0f;
       float similarity = 0.0f;
       for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
-	float A = user_movie[user_index][movie_index_left];
-	float B = user_movie[user_index][movie_index_right];
+	//float A = user_movie[user_index][movie_index_left];
+	//float B = user_movie[user_index][movie_index_right];
+	float A = user_movie1D[user_index*movie_count+movie_index_left];
+	float B = user_movie1D[user_index*movie_count+movie_index_right];
 	if( (A == 0.0f) || (B == 0.0f) ) { continue; }
 	A_sum += A;
 	B_sum += B;
@@ -474,8 +493,10 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
 	A2_sum = 0.0f;
 	B2_sum = 0.0f;
 	for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
-	  float A = user_movie[user_index][movie_index_left];
-	  float B = user_movie[user_index][movie_index_right];
+	  //float A = user_movie[user_index][movie_index_left];
+	  //float B = user_movie[user_index][movie_index_right];
+	  float A = user_movie1D[user_index*movie_count+movie_index_left];
+	  float B = user_movie1D[user_index*movie_count+movie_index_right];
 	  if( (A == 0.0f) || (B == 0.0f) ) { continue; }
 	  float A_diff = (A - A_avg);
 	  float B_diff = (B - B_avg);
@@ -494,10 +515,134 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
   }
     
   // Free up resources.
+
+  delete [] user_movie1D;
   
-  for( uint32_t i = 0; i < rows; ++i ) {
-    delete [] user_movie[i];
+  //for( uint32_t i = 0; i < rows; ++i ) {
+  //  delete [] user_movie[i];
+  //}
+  //delete [] user_movie;
+  
+}
+
+void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_train_users,      // Normalized ratings u_m_r
+			     uint32_t user_count,
+			     uint32_t movie_count,
+			     std::map<uint16_t,uint32_t> & movie_to_index_map,
+			     float ** movie_movie,			     
+			     bool cosine,
+			     bool pearson ) {
+  
+  // Allocate matrix.
+
+  uint32_t rows = user_count;
+  uint32_t columns = movie_count;
+
+  //float ** user_movie = new float * [rows];
+  //for( uint32_t i = 0; i < rows; ++i ) {
+  //  user_movie[i] = new float[columns];
+  //  for( uint32_t j = 0; j < columns; ++j ) {
+  //    user_movie[i][j] = 0.0f;
+  //  }
+  //}
+
+  //  float * user_movie1D = new float[rows * columns];
+  float * movie_user1D = new float[rows * columns];
+  for(uint32_t i = 0; i < rows; ++i) {
+    for(uint32_t j = 0; j < columns; ++j ) {
+      movie_user1D[i*user_count + j] = 0.0f;
+    }
   }
-  delete [] user_movie;
+  
+  // Do not need to keep track of user ids, only movie ids.
+
+  //std::map<uint32_t,uint16_t> index_to_movie_map = {};
+  
+  uint32_t user_index = 0;
+  uint32_t movie_index = 0;
+  for( auto & u_m_r : Norm_train_users ) {
+    for( auto & m_r : u_m_r.second ) {
+      auto mit = movie_to_index_map.find( m_r.first );
+      if( mit == movie_to_index_map.end() ) {
+	movie_to_index_map[m_r.first] = movie_index;
+	//index_to_movie_map[movie_index] = m_r.first;
+	//user_movie[user_index][movie_index] = m_r.second;  // Place rating in matrix.
+	//movie_user1D[user_index*movie_count+movie_index] = m_r.second;  // Place rating in matrix.
+	movie_user1D[movie_index*user_count+user_index] = m_r.second;  // Place rating in matrix.
+	++movie_index;
+      } else {
+	//user_movie[user_index][(*mit).second] = m_r.second;  // Place rating in matrix.	
+	//user_movie1D[user_index*movie_count + (*mit).second] = m_r.second;  // Place rating in matrix.		
+	movie_user1D[(*mit).second*user_count + user_index ] = m_r.second;  // Place rating in matrix.	
+      }
+    }
+    ++user_index;
+  }
+	   
+  for( uint32_t movie_index_left = 0; movie_index_left < movie_count - 1; ++movie_index_left ) {
+    for( uint32_t movie_index_right = movie_index_left + 1; movie_index_right < movie_count; ++movie_index_right ) {
+      float A_sum = 0.0f;
+      float B_sum = 0.0f;
+      float count = 0.0f;
+      float AB_sum = 0.0f;
+      float A2_sum = 0.0f;
+      float B2_sum = 0.0f;
+      float similarity = 0.0f;
+      for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
+	//float A = user_movie[user_index][movie_index_left];
+	//float B = user_movie[user_index][movie_index_right];
+	//float A = user_movie1D[user_index*movie_count+movie_index_left];
+	//float B = user_movie1D[user_index*movie_count+movie_index_right];
+	float A = movie_user1D[movie_index_left*user_count+user_index];
+	float B = movie_user1D[movie_index_right*user_count+user_index];
+	if( (A == 0.0f) || (B == 0.0f) ) { continue; }
+	A_sum += A;
+	B_sum += B;
+	AB_sum += (A*B);
+	A2_sum += (A*A);
+	B2_sum += (B*B);
+	count += 1.0f;
+      }
+      float A_avg = A_sum / count;
+      float B_avg = B_sum / count;
+      if( cosine ) {
+	similarity = AB_sum / (sqrt(A2_sum) * sqrt(B2_sum));
+      } else if( pearson ) {
+	float N_sum = 0.0f;
+	A2_sum = 0.0f;
+	B2_sum = 0.0f;
+	for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
+	  //float A = user_movie[user_index][movie_index_left];
+	  //float B = user_movie[user_index][movie_index_right];
+	  //float A = user_movie1D[user_index*movie_count+movie_index_left];
+	  //float B = user_movie1D[user_index*movie_count+movie_index_right];
+	  float A = movie_user1D[movie_index_left*user_count+user_index];
+	  float B = movie_user1D[movie_index_right*user_count+user_index];
+	  if( (A == 0.0f) || (B == 0.0f) ) { continue; }
+	  float A_diff = (A - A_avg);
+	  float B_diff = (B - B_avg);
+	  N_sum += (A_diff * B_diff);
+	  A2_sum += (A_diff * A_diff);
+	  B2_sum += (B_diff * B_diff);
+	}
+	similarity = N_sum / (sqrt(A2_sum)*sqrt(B2_sum));
+      }
+      
+      // Similarity is now computed for Pearson or Cosine, now need to record it.
+      
+      movie_movie[movie_index_left][movie_index_right] = similarity;
+      movie_movie[movie_index_right][movie_index_left] = similarity;
+    }
+  }
+    
+  // Free up resources.
+
+  //delete [] user_movie1D;
+  delete [] movie_user1D;
+  
+  //for( uint32_t i = 0; i < rows; ++i ) {
+  //  delete [] user_movie[i];
+  //}
+  //delete [] user_movie;
   
 }

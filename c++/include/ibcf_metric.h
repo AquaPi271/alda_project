@@ -42,7 +42,8 @@ void add_to_knn( uint32_t k,
 		 float dist,
 		 std::vector<nn> & knn );
 void normalize_from( std::map<uint32_t,std::map<uint16_t,uint8_t>> & u_m_r,
-		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT );
+		     std::map<uint32_t,std::map<uint16_t,float>> & u_m_r_OUT,
+		     bool normalize );
 float compute_user_bias( uint32_t user_id,
 			 std::map<uint32_t,std::map<uint16_t,uint8_t>> & train_users,
 			 std::map<uint16_t,float> train_movie_averages,
