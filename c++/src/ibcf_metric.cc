@@ -146,7 +146,7 @@ auto main( int argc, char **argv ) -> int {
     std::map<uint16_t,uint32_t> movie_to_index_map = {};
 
     build_item_item_matrix( Norm_train_users, user_count, movie_count, movie_to_index_map, movie_movie, cosine, pearson );
-
+    
     // RMSE start!
 
     float rmse_N = 0.0f;
@@ -445,8 +445,8 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
   
   // Allocate matrix.
 
-  uint32_t rows = user_count;
-  uint32_t columns = movie_count;
+  uint32_t rows = movie_count;
+  uint32_t columns = user_count;
 
   //float ** user_movie = new float * [rows];
   //for( uint32_t i = 0; i < rows; ++i ) {
@@ -457,12 +457,14 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
   //}
 
   //  float * user_movie1D = new float[rows * columns];
+  
   float * movie_user1D = new float[rows * columns];
-  for(uint32_t i = 0; i < rows; ++i) {
-    for(uint32_t j = 0; j < columns; ++j ) {
-      movie_user1D[i*user_count + j] = 0.0f;
+  for(uint32_t i = 0; i < rows; ++i) {  // movie
+    for(uint32_t j = 0; j < columns; ++j ) { // users
+      movie_user1D[i*columns + j] = 0.0f;
     }
   }
+
   
   // Do not need to keep track of user ids, only movie ids.
 

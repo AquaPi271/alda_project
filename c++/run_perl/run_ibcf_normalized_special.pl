@@ -5,8 +5,7 @@ use strict;
 
 my (@samples) = 
 (
- "TSAMPLE_M5000_U2500",  "TSAMPLE_M7000_U2500",  "TSAMPLE_M9000_U2500",
- "TSAMPLE_M1000_U3500",  "TSAMPLE_M3000_U3500",  "TSAMPLE_M5000_U3500",  "TSAMPLE_M7000_U3500",  "TSAMPLE_M9000_U3500",
+ "TSAMPLE_M7000_U3500",  "TSAMPLE_M9000_U3500",
  "TSAMPLE_M1000_U4500",  "TSAMPLE_M3000_U4500",  "TSAMPLE_M5000_U4500",  "TSAMPLE_M7000_U4500",  "TSAMPLE_M9000_U4500"
 );
 
@@ -15,7 +14,7 @@ my ($seed) = 1;
 
 # Need to run this one from missing.
 
-my ($special) = "bin/ibcf_metric TOP_SAMPLES/TSAMPLE_M3000_U2500 ".$seed." 10 0.9 12 c 1";
+my ($special) = "bin/ibcf_metric TOP_SAMPLES/TSAMPLE_M5000_U3500 ".$seed." 10 0.9 12 c 1";
 printf("COSINE :  ".$special." : ");
 system($special);
 

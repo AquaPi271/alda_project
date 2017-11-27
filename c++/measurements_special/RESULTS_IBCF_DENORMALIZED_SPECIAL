@@ -1,0 +1,2 @@
+BASE   :  bin/base_metric TOP_SAMPLES/TSAMPLE_M3000_U3500 1 10 0.9 : RMSE = 0.97684 folds = 10
+PEARSON:  bin/ibcf_metric TOP_SAMPLES/TSAMPLE_M3000_U3500 1 10 0.9 12 p 0 : 
