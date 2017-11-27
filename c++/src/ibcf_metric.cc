@@ -256,7 +256,7 @@ auto main( int argc, char **argv ) -> int {
 
     if( std::fabs(rmse_D) > abs_threshold ) {
       RMSE[fold] = sqrt( rmse_N / rmse_D );
-      std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
+      std::cerr << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
     } else {
       RMSE[fold] = 1.05;
     }
