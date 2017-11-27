@@ -18,7 +18,10 @@
 //static int32_t movie_combo_lookup[dim][dim] = {};
 //std::vector<similarity_info> similarity_vector = {};
 //const float default_no_similarity = -1000.0f;
-  
+
+const float abs_threshold = 0.0001;
+const float bad_similarity = -1000.0f;
+
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 8 ) {
@@ -189,11 +192,18 @@ auto main( int argc, char **argv ) -> int {
 	for( auto & mm : matched_movies ) {
 	  similarity_sum += mm.dist;
 	}
-	
-	for( auto & mm : matched_movies ) {
-	  // Get the rating that the test user had for this movie, do not need to discount bias because built-in for user.	  
-	  ratings_sum += (static_cast<float>(test_users[tu.first][mm.movie_id]) * (mm.dist) / similarity_sum);
-	  ratings_count += 1.0f;
+
+	if( std::fabs( similarity_sum ) < abs_threshold ) {	
+	  for( auto & mm : matched_movies ) {  
+	    ratings_sum += (static_cast<float>(test_users[tu.first][mm.movie_id]));
+	    ratings_count += 1.0f;
+	  }
+	} else {
+	  for( auto & mm : matched_movies ) {
+	    // Get the rating that the test user had for this movie, do not need to discount bias because built-in for user.	  
+	    ratings_sum += (static_cast<float>(test_users[tu.first][mm.movie_id]) * (mm.dist) / similarity_sum);
+	    ratings_count += 1.0f;
+	  }
 	}
 	
 	
@@ -244,9 +254,11 @@ auto main( int argc, char **argv ) -> int {
       }
     }
 
-    if( rmse_D > 0 ) {
+    if( std::fabs(rmse_D) > abs_threshold ) {
       RMSE[fold] = sqrt( rmse_N / rmse_D );
-      //std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
+      std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
+    } else {
+      RMSE[fold] = 1.05;
     }
 
     // Free up movie_movie array.
@@ -296,7 +308,7 @@ bool find_top_knn_movies_cosine_normalized
     add_to_knn( k, m, dist, matched_movies );
   }
   
-  if( matched_movies.size() <= 1 ) {
+  if( matched_movies.size() < 1 ) {
     return(false);
   }
   
@@ -329,7 +341,7 @@ bool find_top_knn_movies_pearson_normalized
     add_to_knn( k, m, dist, matched_movies );
   }
   
-  if( matched_movies.size() <= 1 ) {
+  if( matched_movies.size() < 1 ) {
     return(false);
   }
   
@@ -339,26 +351,30 @@ bool find_top_knn_movies_pearson_normalized
 void add_to_knn( uint32_t k, uint32_t wmovie_id, float dist, std::vector<nn> & knn ) {
 
   //  std::cout << dist << " " << " knn.size() = " << knn.size() << std::endl;
-  
-  if( knn.size() < k ) {
-    knn.push_back( {wmovie_id, dist} );
-  } else {
-    float lowest_dist = knn[0].dist;
-    uint32_t lowest_index = knn.size() + 1;
-    uint32_t i = 0;
-    for( i = 0; i < knn.size(); ++i ) {
-      if( knn[i].dist <= lowest_dist ) {
-	lowest_dist = knn[i].dist;
-	lowest_index = i;
-      }
-    }
 
-    if( lowest_index != knn.size() ) {
-      if( dist > lowest_dist ) {
-	knn[lowest_index].movie_id = wmovie_id;
-	knn[lowest_index].dist = dist;
+  if( dist > bad_similarity ) {
+  
+    if( knn.size() < k ) {
+      knn.push_back( {wmovie_id, dist} );
+    } else {
+      float lowest_dist = knn[0].dist;
+      uint32_t lowest_index = knn.size() + 1;
+      uint32_t i = 0;
+      for( i = 0; i < knn.size(); ++i ) {
+	if( knn[i].dist <= lowest_dist ) {
+	  lowest_dist = knn[i].dist;
+	  lowest_index = i;
+	}
+      }
+      
+      if( lowest_index != knn.size() ) {
+	if( dist > lowest_dist ) {
+	  knn[lowest_index].movie_id = wmovie_id;
+	  knn[lowest_index].dist = dist;
+	}
       }
     }
+    
   }
   
 }
@@ -407,121 +423,15 @@ float compute_user_bias( uint32_t user_id,
     N += 1.0f;
   }
 
+  if( std::fabs(N) < abs_threshold ) {
+    return( 0.0f );
+  }
+  
+  if( std::fabs(N) < abs_threshold ) {
+    return( 0.0f );
+  }
+  
   return( bias / N );
-  
-}
-
-void build_item_item_matrix_working( std::map<uint32_t,std::map<uint16_t,float>> & Norm_train_users,      // Normalized ratings u_m_r
-				     uint32_t user_count,
-				     uint32_t movie_count,
-				     std::map<uint16_t,uint32_t> & movie_to_index_map,
-				     float ** movie_movie,			     
-				     bool cosine,
-				     bool pearson ) {
-  
-  // Allocate matrix.
-
-  uint32_t rows = user_count;
-  uint32_t columns = movie_count;
-
-  //float ** user_movie = new float * [rows];
-  //for( uint32_t i = 0; i < rows; ++i ) {
-  //  user_movie[i] = new float[columns];
-  //  for( uint32_t j = 0; j < columns; ++j ) {
-  //    user_movie[i][j] = 0.0f;
-  //  }
-  //}
-
-  float * user_movie1D = new float[rows * columns];
-  for(uint32_t i = 0; i < rows; ++i) {
-    for(uint32_t j = 0; j < columns; ++j ) {
-      user_movie1D[i*movie_count + j] = 0.0f;
-    }
-  }
-  
-  // Do not need to keep track of user ids, only movie ids.
-
-  //std::map<uint32_t,uint16_t> index_to_movie_map = {};
-  
-  uint32_t user_index = 0;
-  uint32_t movie_index = 0;
-  for( auto & u_m_r : Norm_train_users ) {
-    for( auto & m_r : u_m_r.second ) {
-      auto mit = movie_to_index_map.find( m_r.first );
-      if( mit == movie_to_index_map.end() ) {
-	movie_to_index_map[m_r.first] = movie_index;
-	//index_to_movie_map[movie_index] = m_r.first;
-	//user_movie[user_index][movie_index] = m_r.second;  // Place rating in matrix.
-	user_movie1D[user_index*movie_count+movie_index] = m_r.second;  // Place rating in matrix.
-	++movie_index;
-      } else {
-	//user_movie[user_index][(*mit).second] = m_r.second;  // Place rating in matrix.	
-	user_movie1D[user_index*movie_count + (*mit).second] = m_r.second;  // Place rating in matrix.	
-      }
-    }
-    ++user_index;
-  }
-	   
-  for( uint32_t movie_index_left = 0; movie_index_left < movie_count - 1; ++movie_index_left ) {
-    for( uint32_t movie_index_right = movie_index_left + 1; movie_index_right < movie_count; ++movie_index_right ) {
-      float A_sum = 0.0f;
-      float B_sum = 0.0f;
-      float count = 0.0f;
-      float AB_sum = 0.0f;
-      float A2_sum = 0.0f;
-      float B2_sum = 0.0f;
-      float similarity = 0.0f;
-      for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
-	//float A = user_movie[user_index][movie_index_left];
-	//float B = user_movie[user_index][movie_index_right];
-	float A = user_movie1D[user_index*movie_count+movie_index_left];
-	float B = user_movie1D[user_index*movie_count+movie_index_right];
-	if( (A == 0.0f) || (B == 0.0f) ) { continue; }
-	A_sum += A;
-	B_sum += B;
-	AB_sum += (A*B);
-	A2_sum += (A*A);
-	B2_sum += (B*B);
-	count += 1.0f;
-      }
-      float A_avg = A_sum / count;
-      float B_avg = B_sum / count;
-      if( cosine ) {
-	similarity = AB_sum / (sqrt(A2_sum) * sqrt(B2_sum));
-      } else if( pearson ) {
-	float N_sum = 0.0f;
-	A2_sum = 0.0f;
-	B2_sum = 0.0f;
-	for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
-	  //float A = user_movie[user_index][movie_index_left];
-	  //float B = user_movie[user_index][movie_index_right];
-	  float A = user_movie1D[user_index*movie_count+movie_index_left];
-	  float B = user_movie1D[user_index*movie_count+movie_index_right];
-	  if( (A == 0.0f) || (B == 0.0f) ) { continue; }
-	  float A_diff = (A - A_avg);
-	  float B_diff = (B - B_avg);
-	  N_sum += (A_diff * B_diff);
-	  A2_sum += (A_diff * A_diff);
-	  B2_sum += (B_diff * B_diff);
-	}
-	similarity = N_sum / (sqrt(A2_sum)*sqrt(B2_sum));
-      }
-      
-      // Similarity is now computed for Pearson or Cosine, now need to record it.
-      
-      movie_movie[movie_index_left][movie_index_right] = similarity;
-      movie_movie[movie_index_right][movie_index_left] = similarity;
-    }
-  }
-    
-  // Free up resources.
-
-  delete [] user_movie1D;
-  
-  //for( uint32_t i = 0; i < rows; ++i ) {
-  //  delete [] user_movie[i];
-  //}
-  //delete [] user_movie;
   
 }
 
@@ -603,29 +513,43 @@ void build_item_item_matrix( std::map<uint32_t,std::map<uint16_t,float>> & Norm_
 	B2_sum += (B*B);
 	count += 1.0f;
       }
-      float A_avg = A_sum / count;
-      float B_avg = B_sum / count;
       if( cosine ) {
-	similarity = AB_sum / (sqrt(A2_sum) * sqrt(B2_sum));
-      } else if( pearson ) {
-	float N_sum = 0.0f;
-	A2_sum = 0.0f;
-	B2_sum = 0.0f;
-	for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
-	  //float A = user_movie[user_index][movie_index_left];
-	  //float B = user_movie[user_index][movie_index_right];
-	  //float A = user_movie1D[user_index*movie_count+movie_index_left];
-	  //float B = user_movie1D[user_index*movie_count+movie_index_right];
-	  float A = movie_user1D[movie_index_left*user_count+user_index];
-	  float B = movie_user1D[movie_index_right*user_count+user_index];
-	  if( (A == 0.0f) || (B == 0.0f) ) { continue; }
-	  float A_diff = (A - A_avg);
-	  float B_diff = (B - B_avg);
-	  N_sum += (A_diff * B_diff);
-	  A2_sum += (A_diff * A_diff);
-	  B2_sum += (B_diff * B_diff);
+	float D = sqrt(A2_sum) * sqrt(B2_sum);
+	if( std::fabs(D) > abs_threshold ) {
+	  similarity = AB_sum / D;
+	} else {
+	  similarity = -1000.0f;
 	}
-	similarity = N_sum / (sqrt(A2_sum)*sqrt(B2_sum));
+      } else if( pearson ) {
+	if( count < 1.0f ) {
+	  similarity = -1000.0f;
+	} else {
+	  float A_avg = A_sum / count;
+	  float B_avg = B_sum / count;      
+	  float N_sum = 0.0f;
+	  A2_sum = 0.0f;
+	  B2_sum = 0.0f;
+	  for( uint32_t user_index = 0; user_index < user_count; ++user_index ) {
+	    //float A = user_movie[user_index][movie_index_left];
+	    //float B = user_movie[user_index][movie_index_right];
+	    //float A = user_movie1D[user_index*movie_count+movie_index_left];
+	    //float B = user_movie1D[user_index*movie_count+movie_index_right];
+	    float A = movie_user1D[movie_index_left*user_count+user_index];
+	    float B = movie_user1D[movie_index_right*user_count+user_index];
+	    if( (A == 0.0f) || (B == 0.0f) ) { continue; }
+	    float A_diff = (A - A_avg);
+	    float B_diff = (B - B_avg);
+	    N_sum += (A_diff * B_diff);
+	    A2_sum += (A_diff * A_diff);
+	    B2_sum += (B_diff * B_diff);
+	  }
+	  float D = sqrt(A2_sum)*sqrt(B2_sum);
+	  if( std::fabs(D) > abs_threshold ) {
+	    similarity = N_sum / D;
+	  } else {
+	    similarity = -1000.0f;
+	  }
+	}
       }
       
       // Similarity is now computed for Pearson or Cosine, now need to record it.

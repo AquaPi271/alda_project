@@ -12,6 +12,9 @@
 #include "load_data.h"
 #include "ubcf_metric.h"
 
+const float abs_threshold = 0.0001;
+const float bad_similarity = -1000.0;
+
 auto main( int argc, char **argv ) -> int {
 
   if( argc != 8 ) {
@@ -200,9 +203,11 @@ auto main( int argc, char **argv ) -> int {
       }
     }
 
-    if( rmse_D > 0 ) {
+    if( std::fabs(rmse_D) > abs_threshold ) {
       RMSE[fold] = sqrt( rmse_N / rmse_D );
-      //std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
+      std::cout << "RMSE = " << RMSE[fold] << "  k = " << k << " fold = " << fold << " cold start count = " << cold_start_count << " / " << count << std::endl;
+    } else {
+      RMSE[fold] = 1.05;
     }
   }
 
@@ -282,7 +287,7 @@ bool find_top_knn_users_pearson_normalized
 	B2 += (bdiff * bdiff);	
       }
       float D = sqrt(A2) * sqrt(B2);
-      if( D != 0 ) {
+      if( std::fabs(D) > abs_threshold ) {
 	auto pearson_dist = static_cast<float>(AB) / D;
 	add_to_knn( k, wuser_id, matched_count, pearson_dist, knn );
       }
@@ -291,6 +296,10 @@ bool find_top_knn_users_pearson_normalized
 
   for( auto & n : knn ) {  
     matched_user_ids.push_back( n.user_id );
+  }
+
+  if( matched_user_ids.size() == 0 ) {
+    return(false);
   }
   
   return( true );
@@ -348,7 +357,7 @@ bool find_top_knn_users_cosine_normalized
       }
     }
     float D = sqrt(A2) * sqrt(B2);
-    if( D != 0 ) {
+    if( std::fabs(D) > abs_threshold ) {
       float cos_dist = static_cast<float>(AB) / D;
       add_to_knn( k, wuser_id, matched_count, cos_dist, knn );
     }
@@ -358,6 +367,10 @@ bool find_top_knn_users_cosine_normalized
     matched_user_ids.push_back( n.user_id );
   }
   
+  if( matched_user_ids.size() == 0 ) {
+    return(false);
+  }
+  
   return( true );
 }
 
@@ -365,22 +378,25 @@ bool find_top_knn_users_cosine_normalized
 void add_to_knn( uint32_t k, uint32_t wuser_id, uint32_t matched_count,
 		 float dist, std::vector<nn> & knn ) {
 
-  if( knn.size() < k ) {
-    knn.push_back( {wuser_id, matched_count, dist} );
-  } else {
-    // Ignore matched count for now!
-    float lowest_dist = knn[0].dist;
-    int32_t lowest_index = -1;
-    uint32_t index = 0;
-    for( auto & i : knn ) {
-      if( (i.dist <= lowest_dist)  ) {
-	lowest_dist = i.dist;
-	lowest_index = index;
+  if( dist > bad_similarity ) {
+    
+    if( knn.size() < k ) {
+      knn.push_back( {wuser_id, matched_count, dist} );
+    } else {
+      // Ignore matched count for now!
+      float lowest_dist = knn[0].dist;
+      int32_t lowest_index = -1;
+      uint32_t index = 0;
+      for( auto & i : knn ) {
+	if( (i.dist <= lowest_dist)  ) {
+	  lowest_dist = i.dist;
+	  lowest_index = index;
+	}
+	++index;
       }
-      ++index;
-    }
-    if( lowest_index != -1 ) {
-      knn[lowest_index] = {wuser_id, matched_count, dist};
+      if( lowest_index != -1 ) {
+	knn[lowest_index] = {wuser_id, matched_count, dist};
+      }
     }
   }
   
@@ -430,6 +446,10 @@ float compute_user_bias( uint32_t user_id,
     N += 1.0f;
   }
 
+  if( std::fabs(N) < abs_threshold ) {
+    return( 0.0f );
+  }
+  
   return( bias / N );
   
 }
