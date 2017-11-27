@@ -84,12 +84,13 @@ void display_sorted_rank_lists( std::map<uint16_t,std::map<uint32_t,uint8_t>> & 
 
 auto main( int argc, char **argv ) -> int {
 
-  if( argc != 2 ) {
-    std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
+  if( argc != 3 ) {
+    std::cerr << "Usage: " << argv[0] << " <filename> <density_file_only>" << std::endl;
     exit(1);
   }
   std::string base_path{"./"};
   std::string s{ argv[1] };
+  uint32_t df_only = std::stoi( argv[2] );
 
   std::map<uint16_t,std::map<uint32_t,uint8_t>> movies;
   std::map<uint32_t,std::map<uint16_t,uint8_t>> users;
@@ -119,12 +120,16 @@ auto main( int argc, char **argv ) -> int {
   }
 
   float density = static_cast<float>(total_ratings_count) / static_cast<float>(total_possible_ratings);
-  
-  std::cout << "movie count               = " << total_movie_count << std::endl;
-  std::cout << "user count                = " << total_user_count << std::endl;
-  std::cout << "total possible ratings    = " << total_possible_ratings << std::endl;
-  std::cout << "total actual ratings      = " << total_ratings_count << std::endl;
-  std::cout << "density                   = " << density << std::endl;
+
+  if( df_only != 1 ) {
+    std::cout << "movie count               = " << total_movie_count << std::endl;
+    std::cout << "user count                = " << total_user_count << std::endl;
+    std::cout << "total possible ratings    = " << total_possible_ratings << std::endl;
+    std::cout << "total actual ratings      = " << total_ratings_count << std::endl;
+    std::cout << "density                   = " << density << std::endl;
+  } else {
+    std::cout << s << " " << density << std::endl;
+  }
 
   
   
