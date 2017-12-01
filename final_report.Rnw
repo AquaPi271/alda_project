@@ -195,7 +195,7 @@ Movie / User & 500   & 1500  & 2500  & 3500  & 4500  \\ \hline
 
 -- Density matrix established:  Show chart of Top User x Top Movie with density filled in
 
--- The first experiment will determine which k-NN is the best setting for each combination of input.  Results will be computed against the M1500\_U500 subsample with further subsamples depending on results.  The $k$ parameter will vary from 1 to 20 (or more) to find a maximized setting.  The results of these experiments will then set the k-value for all subsequent tests.
+-- The first experiment will determine which k-NN is the best setting for each combination of input.  Results will be computed against the M1500\_U500 subsample with further subsamples depending on results.  The $k$ parameter will vary from 1 to 20 (or more or less) to find a maximized setting.  The results of these experiments will then set the k-value for all subsequent tests.
 
 -- The remaining experiments will use the 5x5 set of high density subsamples found in table (entry here).  Cosine and Pearson will be applied across all IBCF / UBCF for RMSE evaluation.
 
