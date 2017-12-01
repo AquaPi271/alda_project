@@ -48,6 +48,7 @@ Cary, NC 27513
 The movie service, Netflix, offers customers the choice of watching several thousand movies on demand.  While the service now offers a highly popular online, on-demand, streaming delivery method, in the past, operations were run through a mail DVD system.  A user of the service could request a certain number of movies at any given time.  After watching and returning the DVDs, a customer could receive new movies as quickly as the mail service could deliver them.  Along with the movies, Netflix provided a list of recommended movies based on a user's viewing preferences.  A viewer can voluntarily rate movies they've seen with the understanding that their rating would guide Netflix in suggesting new movies.  The more ratings they gave, the better the recommendations became.
 
 To provide this service, Netflix wrote the software tool, {\it Cinematch }[1].  This tool used a combination of machine learning and data mining algorithms to perform its duties.  It uses the aptly named recommender systems, which have received serious study over the years.  The intuition behind these systems is based on how word-of-mouth conversations spread news of a product.  These conversations occur between friends and acquaintances who tend to share common opinions over a variety of topics.  Likes and dislikes accordingly tend to correlate.  
+
 The field of data mining and machine learning has observed this relationship and formalized the task in a recommender system.  Such systems tend to employ the technique of collaborative filtering.  In short, this method scours data, looking for similarities in rating patterns, much like word-of-mouth works among similar friends, but at a far larger scale.  The result of this similarity search will filter a group of similar users.  This filtered group provides numerical information to compute a recommendation[3].
 
 A variety of algorithms have been adopted. Two stand large: item-based collaborative filtering (IBCF) and user-based collaborative filtering (UBCF).  The names of each imply their method of search.  IBCF finds similarity of items, in this case movies, and makes recommendations based on the ratings of a target user.  Likewise UBCF establishes similarity through the intuitive word-of-mouth approach by comparing similar user ratings[3].
@@ -64,21 +65,13 @@ High density simply means that the user-item ratings matrix contains enough entr
 
 The objective of this paper is to explore the high density region ($>$ 20 \%) with user-based collaborative filtering, item-based collaborative filtering, different methods of similarity comparison, finding 'k' nearest neighbor parameters, comparing the effects of normalization, finding if UBCF or IBCF trends better, and establishing a relationship between accuracy and various levels of density in this high density region.
 
-%It was noted in "BellKor's Pragmatic Chaos"'s work that data sparsity was the main obstacle to address[2].  This project will focus on exploring remedies to this issue by using bulk information from the dataset when insufficient detailed information is in short supply.  When adequate nearest neighbor information is available, the similarity rating will be used.  If the nearest neighbor threshold falls below some value, overall average and variance for movie will be weighted and added to produce the targeted rating.  Timestamps of ratings may also be considered to see if they can be blended into weights to improve target ratings.
-
-%The setup will rely on the {\it recommenderlab } tool suite[4].  The purpose of this suite to to expose a sandbox experimental environment for recommender systems.  Support is provided for UBCF and IBCF systems as well as variants of singular value decomposition (SVD) and hybrid solutions.  
-
-%The dataset also provides timestamp of rating, title of movie, and DVD release date of movie.  Briefly, a bag-of-words approach was considered for identifying movie genres but was rejected outright because of too many proper names.  Additional support will be provided by C++ routines used to clean data, and provide training and test sets. 
-
-%Each contains an ID, date, and rating supplied by a Netflix consumer.  The movie file provides a unique movie ID, release date, and text name for the movie.  
-
 \section{Method}
 
 The approach to the project is essentially a survey of different recommender systems.  The kernel of these approaches are the two main collaborative filtering techniques:  user and item based.  Two main programs run the algorithms of each while several others will construct appropriate input datasets.  Parameters for normalization, similarity, dataset, and nearest neighbors will be supplied to each.  Below is a discussion of each method.
 
 \subsection{UBCF}
 
-This technique is given a set of test users that request ratings for a randomly selected movie of which they have rated.  Against training set, all users who have rated the test movie are extracted.  In this subset of users a similarity comparison is done against the test user.  A sorted list is returned.  From the most similar users in this list, as set by a parameter $k$, a rating can be made by averaging results of their scores.  The search is expensive because there is no easy way of visiting the entire user space, especially with a dense subset.  Because this technique compares user-to-user directly it receives the UBCF designation.
+This technique is given a set of test users that request ratings for a randomly selected movie of which they have rated.  Against this training set, all users who have rated the test movie are extracted.  In this subset of users a similarity comparison is done against the test user.  A sorted list is returned.  From the most similar users in this list, as set by a parameter $k$, a rating can be made by averaging results of their scores.  The search is expensive because there is no easy way of visiting the entire user space, especially with a dense subset.  Because this technique compares user-to-user directly it receives the UBCF designation.
 
 \subsection{IBCF}
 
@@ -86,7 +79,7 @@ Similar to UBCF, IBCF instead seeks items that are most similar to each other.  
 
 The first step is to construct a user / movie ratings matrix where all ratings of the training set are filled accordingly.  Then, systematically, each item's ratings are compared to all other items.  A similarity computation is performed that yields a similarity number.  This number is stored in a user / movie similarity matrix.  Note that this matrix is triangular and will be roughly half the size of the ratings matrix.
 
-When a test user requests a rating, the test movie's index is used.  Along this row are returned the similarity values for all of the test user's known ratings.  A weighted sum of the user's own ratings is used via the formula to construct the final result:
+When a test user requests a rating, the test movie's row index is used.  Along this row are returned the similarity values for all of the test user's known ratings.  A weighted sum of the user's own ratings is used via the formula to construct the final result:
 
 $$ \textrm{Rating} = \frac{\sum_{i=1}^k( r_i * sim_i )}{\sum_{i=1}^k(sim_i)} $$
 
@@ -94,10 +87,9 @@ Another weighing explored was the squared sum.  The highest similarity is always
 
 $$ \textrm{Rating} = \frac{\sum_{i=1}^k( r_i * sim_i^2 )}{\sum_{i=1}^k(sim_i^2)} $$
 
-
 \subsection{Similarity Metrics:  Cosine and Pearson}
 
-Similarity metrics follow two main formulations.  Cosine distance measures similarity via the formula:
+Similarity metrics in this paper follow two main formulations.  Cosine distance measures similarity via the formula:
 
 $$ cos(\theta) = similarity(A,B) = \frac{A \cdot B}{\|A\| \|B\|} = \frac{\sum_{i=1}^N A_i B_i}{\sqrt{\sum_{i=1}^N A_i^2}\sqrt{\sum_{i=1}^N B_i^2}} $$
 
@@ -113,7 +105,7 @@ Users can be optimists or pessimists on all their ratings or for portions of the
 
 For IBCF, the similarity matrix is constructed with normalized ratings.  Because only a similarity is returned, a test user's bias need not be computed.
 
-The formula normalization formula is simply subtracting the average of a user's ratings from each rating:
+The normalization formula used is simply a shifted bias from the average rating a user gave on all movies that they rated:
 
 $$ Rating_i = Rating_{ui} - \overline{Rating_u} $$
 
@@ -121,22 +113,9 @@ $$ Rating_i = Rating_{ui} - \overline{Rating_u} $$
 
 In cases where similarity yields undefined results, for example, floating point overflow or underflow, the average rating for a movie is used instead.  Care is taken to check for such conditions.
 
-\subsection{Other Approaches}
+\subsection{Other Approaches Considered}
 
-There are many other areas to explore with recommender systems.  Some mentioned in [2], [5], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [3] include simulated annealing.  Indeed, the space of applications is very large.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD, which exceeded the time alloted for the assignment.  The Slope-One estimation was more applicable with linear regressions and not with the implemented system and hence was not used.  Of the implemented collaborative filtering methods, the problem space was bounded at the highest density regions of data.  Such an approach could establish an upper bound to these algorithms which justifies this simplification.
-
-
-
-%\subsection{Slope-one Estimation}
-%
-%Slope-one Estimation is another area to explore[5].  This technique simplifies UBCF and IBCF by forcing the linear approximators to use a slope of 1 against one free parameter.  This free parameter is computed by taking the average difference of ratings between two items or two users.  It is then added to the known rating to produce the targeted result.  Slope-one is advertised as a technique to reduce overfitting.
-
-%The main objective is to predict how a given user would rate a movie based on the dataset.  To %establish a baseline, the commonly used technique is through collaborative filtering.  Because this %data set has high dimensionality, PCA or SVD will be used to reduce dimension.  A similarity metric of %cosine distance across the ratings will per user will be used.  RMSE error rates will be the final %metric of comparison on a dataset.  Cross-validation will be used for error measurements.
-%
-%The additional improvements in classification will come from evaluating weighing factors for time of %evaluation.  Several areas to consider are the effects of new users versus established raters, %frequency of ratings in time, time of year, time within a new release window, and release of movie %relative performance review.  Timing permitting additional blended / ensemble methods might be %employed such as gradient descent.  
-
-%%Because I am new to many of these techniques, I request some flexibility in goals and data exploration techniques.
-
+There are many other areas to explore with recommender systems.  Some mentioned in [2], [5], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [3] include simulated annealing.  Indeed, the space of applications is very large and continually growing.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD, which exceeded the time alloted for the assignment.  The Slope-One estimation was more appropriate for linear regressions but not with the implemented system in this paper.  Finally, only the high density region of the dataset was explored.  The paper [6] notes that different approaches might be considered depending on the data density with higher density producing more reliable results.  The results of this project might show an upper bound expected for these types of algorithms. 
 
 \section{Plan and Experiment}
 
