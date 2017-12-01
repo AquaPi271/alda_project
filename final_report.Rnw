@@ -223,6 +223,7 @@ IBCF BETTER THAN UBCF
 DENSITY AS LOW AS 20\% WORK WELL POSSIBLY MUCH LOWER
 INTERPOLATION METHODS
 
+Lessons learned:  Was overwhelmed by algorithms at first.  Explore a bit more and be patient with results.
 (SEE SLIDES)
 
 
