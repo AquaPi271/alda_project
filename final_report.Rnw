@@ -109,17 +109,20 @@ Both forms will be examined across UBCF and IBCF.  The Pearson is expensive beca
 
 \subsection{Normalization}
 
-Users can be optimists or pessimists on all their ratings or for portions of their ratings.  To see the effect of this bias, similarity measurements will be conducted under normalized and non-normalized data.  In UBCF two main biases will be normalized.  The first will be for computation of similarity.  The second will be on the returned score to the user, to shift back into the bias domain.
+Users can be optimists or pessimists on all their ratings or for portions of their ratings.  To see the effect of this bias, similarity measurements will be conducted under normalized and non-normalized data.  In UBCF two main biases will be normalized.  The first will be for computation of similarity.  The second will be on the returned score to the user, to shift back into the biased domain.
 
 For IBCF, the similarity matrix is constructed with normalized ratings.  Because only a similarity is returned, a test user's bias need not be computed.
 
-The 
+The formula normalization formula is simply subtracting the average of a user's ratings from each rating:
+
+$$ Rating_i = Rating_{ui} - \overline{Rating_u} $$
 
 
 
 \subsection{Blending of Global Data for Cold Starts or Sparse Matches}
 
-In sparse data sets, enough missing data could produce less than 'k' nearest neighbors.  Or the quality of the nearest neighbors may be lacking.  Below a certain threshold of quality matches, the estimate rating will be blended with the global rating for that movie.  The amount of weight given to the global rating will be inversely proportional to the number of quality neighbors below the $ k $ threshold.  The same rationale can be applied to the {\it Cold Start} problem.  That is, a new user with few ratings offers only a small matching sample space.
+In cases where similarity yields undefined results, for example, floating point overflow or underflow, the average rating for a movie is used instead.  Care is taken to check for such conditions.
+
 
 %\subsection{Slope-one Estimation}
 %
