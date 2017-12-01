@@ -51,17 +51,17 @@ To provide this service, Netflix wrote the software tool, {\it Cinematch }[1].  
 
 The field of data mining and machine learning has observed this relationship and formalized the task in a recommender system.  Such systems tend to employ the technique of collaborative filtering.  In short, this method scours data, looking for similarities in rating patterns, much like word-of-mouth works among similar friends, but at a far larger scale.  The result of this similarity search will filter a group of similar users.  This filtered group provides numerical information to compute a recommendation[3].
 
-A variety of algorithms have been adopted. Two stand large: item-based collaborative filtering (IBCF) and user-based collaborative filtering (UBCF).  The names of each imply their method of search.  IBCF finds similarity of items, in this case movies, and makes recommendations based on the ratings of a target user.  Likewise UBCF establishes similarity through the intuitive word-of-mouth approach by comparing similar user ratings[3].
+A variety of algorithms have been adopted. Two stand large: item-based collaborative filtering (IBCF) and user-based collaborative filtering (UBCF).  The names of each imply their method of search.  IBCF finds similarity of items, in this case movies, and makes recommendations based on the ratings of a target user.  Likewise UBCF establishes similarity through the intuitive word-of-mouth approach by comparing similar user ratings[2].
 
 To stimulate research in improving their recommender system, Netflix offered the Netflix prize in 2006.  The objective seemed tantalizingly simple: be the first team to improve recommendations by 10\% over {\it Cinematch } and receive \$1 million.  Without delving too far into details, contestants were given a dataset of over 100 million user ratings of 17700 movies.  Against this dataset algorithms could be devised, tested, and submitted to Netflix.  Netflix would run the submission against a hidden testset.  A simple root-mean-square-error would be computed per tested rating to arrive at a final score.  This score was the metric compared against {\it Cinematch } to determine the winner[1].
 
-The prize was captured in September 2009 by the team "BellKor's Pragmatic Chaos", a group of professional statisticians and machine learning experts.  Their methods were sophisticated, entirely new, and were comprised of 107 predictor algorithms run as an ensemble. At their core, however, they were recommender systems that had advanced ways of producing better similarity metrics[7].
+The prize was captured in September 2009 by the team "BellKor's Pragmatic Chaos", a group of professional statisticians and machine learning experts.  Their methods were sophisticated, entirely new, and were comprised of 107 predictor algorithms run as an ensemble. At their core, however, they were recommender systems that had advanced ways of producing better similarity metrics[3].
 
-The objective of this paper is less ambitious than the Netflix Prize.  The combined efforts of the winning team included well over 2000 hours of work for their preliminary solution where even their simplest algorithms took 45 minutes to run. Several searches spanned over many hours[2].  The scope is beyond what can be provided in less than a semester's time.  
+The objective of this paper is less ambitious than the Netflix Prize.  The combined efforts of the winning team included well over 2000 hours of work for their preliminary solution where even their simplest algorithms took 45 minutes to run. Several searches spanned over many hours[4].  The scope is beyond what can be provided in less than a semester's time.  
 
-Instead this paper will examine a high density subset of the dataset.  Initial exploration of dataset included the use of the {\it recommenderlab} tool suite, a set of tools and algorithms in R "which provides the infrastructure to develop and test recommender algorithms for rating data and 0-1 data in a unified framework".[4]  While the tool was useful for exploring small datasets it did not scale with high memory / density matrices and therefore was abandoned.  Instead a custom, optimized C++11 library of tools was developed from scratch to measure:  UBCF, IBCF, similarity, normalization, nearest neighbor optimizations, and finding where high density based predictions begin to lose effectiveness.
+Instead this paper will examine a high density subset of the dataset.  Initial exploration of dataset included the use of the {\it recommenderlab} tool suite, a set of tools and algorithms in R "which provides the infrastructure to develop and test recommender algorithms for rating data and 0-1 data in a unified framework"[5].  While the tool was useful for exploring small datasets it did not scale with high memory / density matrices and therefore was abandoned.  Instead a custom, optimized C++11 library of tools was developed from scratch to measure:  UBCF, IBCF, similarity, normalization, nearest neighbor optimizations, and finding where high density based predictions begin to lose effectiveness.
 
-High density simply means that the user-item ratings matrix contains enough entries to fill the matrix past a pre-determined percentage.  The study [7] explores performance for different collaborative filtering algorithms especially towards the lower end of the density spectrum.  It notes that depending on density different approaches should be taken to get collaborative filtering to work.
+High density simply means that the user-item ratings matrix contains enough entries to fill the matrix past a pre-determined percentage.  The study [3] explores performance for different collaborative filtering algorithms especially towards the lower end of the density spectrum.  It notes that depending on density different approaches should be taken to get collaborative filtering to work.
 
 The objective of this paper is to explore the high density region ($>$ 20 \%) with user-based collaborative filtering, item-based collaborative filtering, different methods of similarity comparison, finding 'k' nearest neighbor parameters, comparing the effects of normalization, finding if UBCF or IBCF trends better, and establishing a relationship between accuracy and various levels of density in this high density region.
 
@@ -115,7 +115,7 @@ In cases where similarity yields undefined results, for example, floating point 
 
 \subsection{Other Approaches Considered}
 
-There are many other areas to explore with recommender systems.  Some mentioned in [2], [5], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [3] include simulated annealing.  Indeed, the space of applications is very large and continually growing.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD, which exceeded the time alloted for the assignment.  The Slope-One estimation was more appropriate for linear regressions but not with the implemented system in this paper.  Finally, only the high density region of the dataset was explored.  The paper [6] notes that different approaches might be considered depending on the data density with higher density producing more reliable results.  The results of this project might show an upper bound expected for these types of algorithms. 
+There are many other areas to explore with recommender systems.  Some mentioned in [3], [4], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [2] include simulated annealing.  Indeed, the space of applications is very large and continually growing.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD, which exceeded the time alloted for the assignment.  The Slope-One estimation was more appropriate for linear regressions but not with the implemented system in this paper.  Finally, only the high density region of the dataset was explored.  The paper [7] notes that different approaches might be considered depending on the data density with higher density producing more reliable results.  The results of this project might show an upper bound expected for these types of algorithms. 
 
 \section{Plan and Experiment}
 
@@ -520,17 +520,18 @@ Code for this project can be found under the 'c++' subdirectory at the Github ad
 \small{
 [1] Xavier Amatriain, Justin Basilico. {\it Netflix Recommendations: Beyond the 5 Stars (Two Parts)}.  The Netflix Tech Blog, 2012. https://medium.com/netflix-techblog/netflix-recommendations-beyond-the-5-stars-part-1-55838468f429. 11/5/2017.
 
-[2] Robert M. Bell, Yehuda Koren. (2007)  {\it Scalable Collaborative Filtering with Jointly Derived Neighborhood Interpolation Weights}.  Seventh IEEE International Conference on Data Mining. pp. 43-52. IEEE.
+[2] Linyuan Lu, Matus Medo, Chi Ho Yeung, Yi-Cheng Zhang, Zi-Ke Zhang, Tao Zhou. (2012) {\it Recommender systems}. In Physics Reports pp. 1-49, Elsevier B. V. 0370-1573.
 
-[3] Linyuan Lu, Matus Medo, Chi Ho Yeung, Yi-Cheng Zhang, Zi-Ke Zhang, Tao Zhou. (2012) {\it Recommender systems}. In Physics Reports pp. 1-49, Elsevier B. V. 0370-1573.
+[3] Yehuda Koren. (2009). The BellKor Solution to the Netflix Grand Prize.
 
-[4] Michael Hahsler (2017). recommenderlab: Lab for Developing and Testing Recommender Algorithms. R package version 0.2-2. http://lyle.smu.edu/IDA/recommenderlab/
+[4] Robert M. Bell, Yehuda Koren. (2007)  {\it Scalable Collaborative Filtering with Jointly Derived Neighborhood Interpolation Weights}.  Seventh IEEE International Conference on Data Mining. pp. 43-52. IEEE.
 
-[5] Daniel Lemire, Anna Maclachlan. (2007). {\it Slope One Predictors for Online Rating-Based Collaborative Filtering}. In CoRR, Volume abs/cs/0702144.
+[5] Michael Hahsler (2017). recommenderlab: Lab for Developing and Testing Recommender Algorithms. R package version 0.2-2. http://lyle.smu.edu/IDA/recommenderlab/
 
-[6] Joonseok Lee, Mingxuan Sun, Guy Lebanon. (2012).  A Comparative Study of Collaborative Filtering Algorithms.
+[6] Daniel Lemire, Anna Maclachlan. (2007). {\it Slope One Predictors for Online Rating-Based Collaborative Filtering}. In CoRR, Volume abs/cs/0702144.
 
-[7] Yehuda Koren. (2009). The BellKor Solution to the Netflix Grand Prize.
+[7] Joonseok Lee, Mingxuan Sun, Guy Lebanon. (2012).  A Comparative Study of Collaborative Filtering Algorithms.
+
 
 }
 % \subsubsection*{References}
