@@ -373,7 +373,7 @@ grid.arrange(p1,p2,padding=10,ncol=2)
 @
 \end{center}
 \caption{Collaborative filtering normalization and similarity comparison}
-\label{fig:knn}
+\label{fig:cf_compare_plot}
 \end{figure}
 
 Over all combination of the 25 measurements from the 5 x 5 density matrix overall similarity and normalization techniques can be compared to the baseline.  In the UBCF case, normalization squarely outperforms its untreated counterpart by significant margins.  The Cosine Denormalized metric is worse than even the baseline.  In the IBCF the trend is similar.  Overall normalization offers anywhere from 10\% to 20\% RMSE improvement over the baseline.  This relatively simple technique demonstrates that with even 5 ordinal ratings, enough of a consistent bias exists on a per user basis to justify aligning all data to a common unbiased set of data.  This result was signficant and surprising.
@@ -382,31 +382,151 @@ The performance of Pearson versus Cosine Normalized is different for UBCF and IB
 
 This data also answer another question.  Raw high density subsamples match or exceed even the Netflix Prize results.  This is fairly unsurprising as much of the dataset is occupied.
 
--- overall density vs. RMSE (demonstrates no cross-over point in the high density region)
+\subsection{Overall Density vs. RMSE}
 
--- UBCF and IBCF parametric graphs (hold one constant while other varies)
- 
-
-\section{Conclusion}
-
-The dataset is large.  A good portion of time was spent on exploring IBCF and UBCF features in {\it recommenderlab} by using the built-in MovieLense database.  The routines did a great job in explaining the overall programming approach, but they fail to run against extraordinarily large amounts of data.  The remedy is to sample the full dataset with a collection of C++ tools.  To this end, much of the development work has gone into creating these tools and processing the data for use in R Studio.
-
-The toolsuite might be extended to perform the calculations described in this report.  Raw C++ can handle the large amounts of data and run much quicker than R's interpreted environment.  However, the interpreted environment offers the advantage of operating on data without reloading it for each experiment.
-
-A day or two might be spent looking for APIs to enhance the approach.
+<<label=density,include=FALSE>>=
+library("reshape2")
+library("ggplot2")
+library("gridExtra")
 
 
-KNN IMPORTANCE
-NORMALIZATION IMPORTANCE
-OPTIMIZATION
-GPU
-IBCF BETTER THAN UBCF
-DENSITY AS LOW AS 20\% WORK WELL POSSIBLY MUCH LOWER
-INTERPOLATION METHODS
+density_table <- read.delim(text="Density,Base_Line,IBCF_Pearson_Norm,UBCF_Cosine_Norm,
+0.850744,0.936467,0.755628,0.766873,
+0.79437,0.936927,0.759063,0.831235,
+0.763314,0.968466,0.803849,0.816331,
+0.741145,0.969563,0.794451,0.828095,
+0.723359,0.972416,0.78942,0.829542,
+0.624195,1.03431,0.814354,0.815974,
+0.541025,0.989388,0.800846,0.829869,
+0.501753,0.991315,0.789839,0.848119,
+0.490744,1.0797,0.893324,0.886032,
+0.475589,0.97684,0.79057,0.826053,
+0.455917,1.00754,0.786609,0.86171,
+0.405143,1.01519,0.848432,0.843545,
+0.401358,1.07182,0.884216,0.825513,
+0.368286,1.03867,0.80264,0.856144,
+0.344525,1.02696,0.806911,0.861247,
+0.337606,1.11195,0.925272,0.831459,
+0.327173,0.99768,0.799225,0.839758,
+0.320505,1.04383,0.866116,0.848398,
+0.287801,1.00432,0.809491,0.822458,
+0.267161,1.03228,0.821073,0.855554,
+0.263315,1.03265,0.859913,0.836399,
+0.252274,1.02151,0.824488,0.854037,
+0.234405,1.02817,0.846731,0.847066,
+0.216507,1.03952,0.843588,0.849884,
+0.203735,1.05139,0.832674,0.875231
+",as.is=TRUE,sep=",",header=TRUE)
 
-Lessons learned:  Was overwhelmed by algorithms at first.  Explore a bit more and be patient with results.
-(SEE SLIDES)
+p1 <- ggplot(density_table, aes(Density)) +
+  geom_point(aes(y=Base_Line, colour = "Base Line")) +
+  geom_line(aes(y=Base_Line, colour = "Base Line"), size=1) +
+  geom_point(aes(y=IBCF_Pearson_Norm, colour = "IBCF Pearson Norm")) +
+  geom_line(aes(y=IBCF_Pearson_Norm, colour = "IBCF Pearson Norm"), size=1) +
+  geom_point(aes(y=UBCF_Cosine_Norm, colour = "UBCF Cosine Norm")) +
+  geom_line(aes(y=UBCF_Cosine_Norm, colour = "UBCF Cosine Norm"), size=1) +
+  labs(x = "Densities", y = "RMSE") +
+  theme(panel.background = element_blank())
 
+grid.arrange(p1,padding=10,nrow=1)
+@
+
+
+\begin{figure}[!ht]
+\begin{center}
+<<density_plot,ref.label='density', fig.width=6.0, fig.height=3.0, out.width='0.75\\linewidth', echo=FALSE, crop=TRUE>>=
+@
+\end{center}
+\caption{Density vs. RMSE for highest performing metrics}
+\label{fig:density_plot}
+\end{figure}
+
+In the density table, the results reveal that for densities down to 20\% the top collaborative filtering methods continue to signicantly outperform the baseline metric.  While the appears to be a general trend of worsening results towards the lower densities, the baseline also tracks in this direction.  This indicates that the crossover point is much lower than 20\%, possible in low single digit density regions.  This is a testament to the success of these algorithms, especially where data is well represented.
+
+
+\subsection{IBCF vs. UBCF Results}
+
+<<label=ibcf_pn_ubcf_cn,include=FALSE>>=
+library("reshape2")
+library("ggplot2")
+library("gridExtra")
+
+
+ibcf_pn_table <- read.delim(text="User_Count,M1000,M3000,M5000,M7000,M9000,
+500,0.755628,0.814354,0.893324,0.884216,0.925272,
+1500,0.759063,0.800846,0.848432,0.866116,0.859913,
+2500,0.803849,0.789839,0.80264,0.809491,0.846731,
+3500,0.794451,0.79057,0.806911,0.821073,0.843588,
+4500,0.78942,0.786609,0.799225,0.824488,0.832674
+",as.is=TRUE,sep=",",header=TRUE)
+
+ubcf_cn_table <- read.delim(text="User_Count,M1000,M3000,M5000,M7000,M9000,
+500,0.766873,0.815974,0.886032,0.825513,0.831459,
+1500,0.831235,0.829869,0.843545,0.848398,0.836399,
+2500,0.816331,0.848119,0.856144,0.822458,0.847066,
+3500,0.828095,0.82605,0.861247,0.855554,0.849884,
+4500,0.829542,0.86171,0.839758,0.854037,0.875231
+",as.is=TRUE,sep=",",header=TRUE)
+
+p1 <- ggplot(ibcf_pn_table, aes(User_Count)) +
+  geom_point(aes(y=M1000, colour = "M=1000")) +
+  geom_line(aes(y=M1000, colour = "M=1000"), size=1) +
+  geom_point(aes(y=M3000, colour = "M=3000")) +
+  geom_line(aes(y=M3000, colour = "M=3000"), size=1) +
+  geom_point(aes(y=M5000, colour = "M=5000")) +
+  geom_line(aes(y=M5000, colour = "M=5000"), size=1) +
+  geom_point(aes(y=M7000, colour = "M=7000")) +
+  geom_line(aes(y=M7000, colour = "M=7000"), size=1) +
+  geom_point(aes(y=M9000, colour = "M=9000")) +
+  geom_line(aes(y=M9000, colour = "M=9000"), size=1) +
+  labs(x = "User Count (IBCF Pearson Norm)", y = "RMSE") +
+  ylim(0.75, 1.00) +
+  theme(panel.background = element_blank())
+
+
+p2 <- ggplot(ubcf_cn_table, aes(User_Count)) +
+  geom_point(aes(y=M1000, colour = "M=1000")) +
+  geom_line(aes(y=M1000, colour = "M=1000"), size=1) +
+  geom_point(aes(y=M3000, colour = "M=3000")) +
+  geom_line(aes(y=M3000, colour = "M=3000"), size=1) +
+  geom_point(aes(y=M5000, colour = "M=5000")) +
+  geom_line(aes(y=M5000, colour = "M=5000"), size=1) +
+  geom_point(aes(y=M7000, colour = "M=7000")) +
+  geom_line(aes(y=M7000, colour = "M=7000"), size=1) +
+  geom_point(aes(y=M9000, colour = "M=9000")) +
+  geom_line(aes(y=M9000, colour = "M=9000"), size=1) +
+  labs(x = "User Count (UBCF Cosine Norm)", y = "RMSE") +
+  ylim(0.75, 1.00) +
+  theme(panel.background = element_blank())
+
+grid.arrange(p1,p2,padding=10,ncol=2)
+@
+
+
+\begin{figure}[!ht]
+\begin{center}
+<<ibcf_pn_ubcf_cn_plot,ref.label='ibcf_pn_ubcf_cn', fig.width=6.0, fig.height=3.0, out.width='0.90\\linewidth', echo=FALSE, crop=TRUE>>=
+@
+\end{center}
+\caption{RMSE for fixed movie count vs. user count of IBCF and UBCF}
+\label{fig:ibcf_pn_ubcf_cn_plot}
+\end{figure}
+
+These plots show converging results after movie and user count exceed a certain portion of the subsamples.  The trend would indicate that the IBCF performs better than UBCF for the dataset subsamples.  There is a wide variability at low user count settings for both CF metrics suggesting not enough user information is available when the subsample is low compared to the overall dataset.  This indicates that future experiments should possibly consider some threshold percentage of both data dimensions before results start to stabilize.  Where the results start to converge IBCF appears to outperform UBCF, marginally so.  In this dataset the number of movies is outstripped by the total user count, indicating more useful information is stored in the item-item matrix.
+
+\subsection{Miscellaneous Results}
+
+In cases where data points were missing so as not to match the knn threshold, the average rating was used instead.  This proved to have insignificant effect on the data.
+
+For weighted similarities in the item-item matrix, a linear and squared rating appearing to only have a 0.0001 overall RMSE improvement with the squared result slightly favored.
+
+\section{Conclusions}
+
+For high density datasets ($>$ 20\%) both UBCF and IBCF are highly successful in predicting user ratings over the baseline.  The success of these algorithms probably extends much lower, likely into the single digit densities.  This area would be interesting to explore, but time constraints prevent investigation into this area.  Normalization offers outstanding results, in excess of 20\% improvement in RMSE, and should be a crucial part in all collaborative filtering algorithms.  Similarity scoring varies between UBCF versus IBCF and should be measured when investigating any new dataset.  Other similarity metrics should also be considered.  IBCF offers a small 0.05 RMSE advantage for the dataset explored, a trend held throughout all densities.  Finally, isolating ideal $k$ values for nearest neighbors was especially important.  The ideal parameter setting was remarkably consistent across all metrics.
+
+One possible future bit of work would be to explore interpolation of missing values in the user-item or item-item matrix.  In this dataset, the item-item matrix gave better results and consumes far less resource.  It might only be feasible when exposed to the full dataset.
+
+Optimizing algorithms proved important for runtimes.  Cache aware data structures reduced run times by over 60\% from less aware approaches, moving run times from 3 to 5 days down to less than 1 day.  Care also must be taken in using built-in data structures offered by a lanaguage.  For example, while STL hashing might be useful in sparse density datasets, a flat matrix in memory for item-item proved a better choice with linear lookup times.  This difference was decisive in choosing between the R {\it recommenderlab} approach or writing custom software.  Another area of development would be to move data structures to GPU memory for GPU processing.  At its core, the algorithms perform a large series of multiply-accumulate instructions which are exactly suited to GPU processing.  The speed-up hear could be remarkable, enabling a far more expansive view of data mining algorithms.
 
 %The formatting instructions contained in these style files are summarized in
 %sections \ref{gen_inst}, \ref{headings}, and \ref{others} below.
