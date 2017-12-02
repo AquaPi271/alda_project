@@ -27,8 +27,6 @@ cf_k_table <- read.delim(text="k UBCF_COSINE_DENORMALIZED IBCF_COSINE_DENORMALIZ
 #       aes(x=k, y=UBCF_COSINE_DENORMALIZED)) +
 #  geom_line()
 
-vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
-
 p1 <- ggplot(cf_k_table, aes(k)) +
   geom_point(aes(y=UBCF_PEARSON_NORMALIZED, colour = "UBCF")) +
   geom_line(aes(y=UBCF_PEARSON_NORMALIZED, colour = "UBCF"), size=1) +
@@ -44,4 +42,49 @@ p1 <- ggplot(cf_k_table, aes(k)) +
   geom_line(aes(y=IBCF_COSINE_NORMALIZED, colour = "IBCF"), size=1) +
   labs(y = "RMSE") +
   theme(panel.background = element_blank(), legend.position = "none")
-  grid.arrange(p1,p2,ncol=2)
+#  grid.arrange(p1,p2,ncol=2)
+  
+  cf_ubcf_compare_table <- read.delim(text="Measurement,Base_Line,Cosine_Denorm,Cosine_Norm,Pearson_Denorm,Pearson_Norm,
+1,1.0797,1.19458,0.886032,0.958599,0.93466,
+2,1.11195,1.18205,0.831459,1.01042,0.86987,
+3,1.07182,1.18017,0.825513,0.974755,0.873476,
+4,1.03431,1.16384,0.815974,0.903752,0.858213,
+5,1.02696,1.13505,0.861247,0.970767,0.886639,
+6,1.03228,1.13174,0.855554,0.967849,0.894999,
+7,1.03952,1.11968,0.849884,0.966142,0.88241,
+8,1.02817,1.10991,0.847066,0.965589,0.881449,
+9,1.01519,1.10254,0.843545,0.944243,0.902373,
+10,1.03265,1.10207,0.836399,0.933183,0.867191,
+11,1.03867,1.10052,0.856144,0.977383,0.891405,
+12,1.02151,1.09749,0.854037,0.975044,0.890092,
+13,1.05139,1.09585,0.875231,0.989457,0.918303,
+14,1.04383,1.08867,0.848398,0.994004,0.890411,
+15,1.00432,1.07522,0.822458,0.923591,0.856352,
+16,1.00754,1.06909,0.86171,0.956693,0.88929,
+17,0.991315,1.05956,0.848119,0.942754,0.881036,
+18,0.99768,1.05817,0.839758,0.956986,0.870892,
+19,0.97684,1.04926,0.826053,0.942877,0.852991,
+20,0.989388,1.00991,0.829869,0.947265,0.865501,
+21,0.936467,1.00712,0.766873,0.864337,0.779886,
+22,0.936927,1.0034,0.831235,0.897187,0.869117,
+23,0.972416,0.998826,0.829542,0.920469,0.857756,
+24,0.969563,0.97859,0.828095,0.920952,0.86166,
+25,0.968466,0.971134,0.816331,0.917372,0.858401
+",as.is=TRUE,sep=",",header=TRUE)
+
+p1 <- ggplot(cf_ubcf_compare_table, aes(Measurement)) +
+  geom_point(aes(y=Base_Line, colour = "Base Line")) +
+  geom_line(aes(y=Base_Line, colour = "Base Line"), size=1) +
+  geom_point(aes(y=Cosine_Denorm, colour = "Cosine Denorm")) +
+  geom_line(aes(y=Cosine_Denorm, colour = "Cosine Denorm"), size=1) +
+  geom_point(aes(y=Cosine_Norm, colour = "Cosine Norm")) +
+  geom_line(aes(y=Cosine_Norm, colour = "Cosine Norm"), size=1) +
+  geom_point(aes(y=Pearson_Denorm, colour = "Pearson Denorm")) +
+  geom_line(aes(y=Pearson_Denorm, colour = "Pearson Denorm"), size=1) +
+  geom_point(aes(y=Pearson_Norm, colour = "Pearson Norm")) +
+  geom_line(aes(y=Pearson_Norm, colour = "Pearson Norm"), size=1) +
+  labs(y = "RMSE") +
+  theme(panel.background = element_blank())
+
+
+grid.arrange(p1,padding=10,ncol=1)
