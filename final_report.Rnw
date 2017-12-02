@@ -52,9 +52,9 @@ The movie service, Netflix, offers customers the choice of watching several thou
 
 To provide this service, Netflix wrote the software tool, {\it Cinematch }[1].  This tool used a combination of machine learning and data mining algorithms to perform its duties.  It uses the aptly named recommender systems, which have received serious study over the years.  The intuition behind these systems is based on how word-of-mouth conversations spread news of a product.  These conversations occur between friends and acquaintances who tend to share common opinions over a variety of topics.  Likes and dislikes accordingly tend to correlate.  
 
-The field of data mining and machine learning has observed this relationship and formalized the task in a recommender system.  Such systems tend to employ the technique of collaborative filtering.  In short, this method scours data, looking for similarities in rating patterns, much like word-of-mouth works among similar friends, but at a far larger scale.  The result of this similarity search will filter a group of similar users.  This filtered group provides numerical information to compute a recommendation[3].
+The field of data mining and machine learning has observed this relationship and formalized the task in a recommender system.  Such systems tend to employ the technique of collaborative filtering.  In short, this method scours data, looking for similarities in rating patterns, much like word-of-mouth works among similar friends, but at a far larger scale.  The result of this similarity search will filter a group of similar users.  This filtered group provides numerical information to compute a recommendation[2].
 
-A variety of algorithms have been adopted. Two stand large: item-based collaborative filtering (IBCF) and user-based collaborative filtering (UBCF).  The names of each imply their method of search.  IBCF finds similarity of items, in this case movies, and makes recommendations based on the ratings of a target user.  Likewise UBCF establishes similarity through the intuitive word-of-mouth approach by comparing similar user ratings[2].
+A variety of algorithms have been adopted. Two stand large: item-based collaborative filtering (IBCF) and user-based collaborative filtering (UBCF).  The names of each imply their method of search.  IBCF finds similarity of items, in this case movies, and makes recommendations based on the ratings of a target user.  Likewise UBCF establishes similarity through the intuitive word-of-mouth approach by comparing similar user ratings[3].
 
 To stimulate research in improving their recommender system, Netflix offered the Netflix prize in 2006.  The objective seemed tantalizingly simple: be the first team to improve recommendations by 10\% over {\it Cinematch } and receive \$1 million.  Without delving too far into details, contestants were given a dataset of over 100 million user ratings of 17700 movies.  Against this dataset algorithms could be devised, tested, and submitted to Netflix.  Netflix would run the submission against a hidden testset.  A simple root-mean-square-error would be computed per tested rating to arrive at a final score.  This score was the metric compared against {\it Cinematch } to determine the winner[1].
 
@@ -62,23 +62,23 @@ The prize was captured in September 2009 by the team "BellKor's Pragmatic Chaos"
 
 The objective of this paper is less ambitious than the Netflix Prize.  The combined efforts of the winning team included well over 2000 hours of work for their preliminary solution where even their simplest algorithms took 45 minutes to run. Several searches spanned over many hours[4].  The scope is beyond what can be provided in less than a semester's time.  
 
-Instead this paper will examine a high density subset of the dataset.  Initial exploration of dataset included the use of the {\it recommenderlab} tool suite, a set of tools and algorithms in R "which provides the infrastructure to develop and test recommender algorithms for rating data and 0-1 data in a unified framework"[5].  While the tool was useful for exploring small datasets it did not scale with high memory / density matrices and therefore was abandoned.  Instead a custom, optimized C++11 library of tools was developed from scratch to measure:  UBCF, IBCF, similarity, normalization, nearest neighbor optimizations, and finding where high density based predictions begin to lose effectiveness.
+Instead this paper will examine a high density subset of the dataset.  Initial exploration of dataset included the use of the {\it recommenderlab} tool suite, a set of tools and algorithms in R "which provides the infrastructure to develop and test recommender algorithms for rating data and 0-1 data in a unified framework"[5].  While the tool was useful for exploring small datasets, it did not scale with high memory / density matrices and therefore was abandoned.  
 
-High density simply means that the user-item ratings matrix contains enough entries to fill the matrix past a pre-determined percentage.  The study [3] explores performance for different collaborative filtering algorithms especially towards the lower end of the density spectrum.  It notes that depending on density different approaches should be taken to get collaborative filtering to work.
+High density simply means that the user-item ratings matrix contains enough entries to fill the matrix past a pre-determined percentage.  The study [3] explores performance for different collaborative filtering algorithms especially towards the lower end of the density spectrum.  It notes that depending on density, different approaches should be taken to get collaborative filtering to work.
 
 The objective of this paper is to explore the high density region ($>$ 20 \%) with user-based collaborative filtering, item-based collaborative filtering, different methods of similarity comparison, finding 'k' nearest neighbor parameters, comparing the effects of normalization, finding if UBCF or IBCF trends better, and establishing a relationship between accuracy and various levels of density in this high density region.
 
 \section{Method}
 
-The approach to the project is essentially a survey of different recommender systems.  The kernel of these approaches are the two main collaborative filtering techniques:  user and item based.  Two main programs run the algorithms of each while several others will construct appropriate input datasets.  Parameters for normalization, similarity, dataset, and nearest neighbors will be supplied to each.  Below is a discussion of each method.
+The approach to the project is essentially a survey of different recommender systems.  The kernel of these approaches are the two main collaborative filtering techniques:  user and item based.  Two main programs run the algorithms of each, while several others will construct appropriate input datasets.  Parameters for normalization, similarity, dataset, and nearest neighbors will be supplied to each.  Below is a discussion of each method.
 
 \subsection{UBCF}
 
-This technique is given a set of test users that request ratings for a randomly selected movie of which they have rated.  Against this training set, all users who have rated the test movie are extracted.  In this subset of users a similarity comparison is done against the test user.  A sorted list is returned.  From the most similar users in this list, as set by a parameter $k$, a rating can be made by averaging results of their scores.  The search is expensive because there is no easy way of visiting the entire user space, especially with a dense subset.  Because this technique compares user-to-user directly it receives the UBCF designation.
+This technique is given a set of test users that request ratings for a randomly selected movie of which they have rated.  Against this training set, all users who have rated the test movie are extracted.  In this subset of users, a similarity comparison is done against the test user.  A sorted list is returned.  From the most similar users in this list, as set by a parameter $k$, a rating can be made by averaging the results of their scores.  The search is expensive because there is no easy way of visiting the entire user space, especially with a dense subset.  Because this technique compares user-to-user directly, it receives the UBCF designation.
 
 \subsection{IBCF}
 
-Similar to UBCF, IBCF instead seeks items that are most similar to each other.  In most traditional uses of IBCF, a list of most similar items are returned based on a similarity score.  The algorithm has been modified to instead return a user's estimated rating from a similarity matrix.
+IBCF seeks items that are most similar to each other.  In most traditional uses of IBCF, a list of most similar items are returned based on a similarity score.  The algorithm has been modified to instead return a user's estimated rating from a similarity matrix.
 
 The first step is to construct a user / movie ratings matrix where all ratings of the training set are filled accordingly.  Then, systematically, each item's ratings are compared to all other items.  A similarity computation is performed that yields a similarity number.  This number is stored in a user / movie similarity matrix.  Note that this matrix is triangular and will be roughly half the size of the ratings matrix.
 
@@ -86,7 +86,7 @@ When a test user requests a rating, the test movie's row index is used.  Along t
 
 $$ \textrm{Rating} = \frac{\sum_{i=1}^k( r_i * sim_i )}{\sum_{i=1}^k(sim_i)} $$
 
-Another weighing explored was the squared sum.  The highest similarity is always 1 therefore the lower the similarity the more the squared rating is penalized:
+Another weighing approach is to use the sum squared average.  The highest similarity is always 1 therefore the lower the similarity the more the squared rating is penalized:
 
 $$ \textrm{Rating} = \frac{\sum_{i=1}^k( r_i * sim_i^2 )}{\sum_{i=1}^k(sim_i^2)} $$
 
@@ -108,7 +108,7 @@ Users can be optimists or pessimists on all their ratings or for portions of the
 
 For IBCF, the similarity matrix is constructed with normalized ratings.  Because only a similarity is returned, a test user's bias need not be computed.
 
-The normalization formula used is simply a shifted bias from the average rating a user gave on all movies that they rated:
+The normalization formula used is a shifted bias from the average rating a user gave on all movies that they rated:
 
 $$ Rating_i = Rating_{ui} - \overline{Rating_u} $$
 
@@ -118,7 +118,7 @@ In cases where similarity yields undefined results, for example, floating point 
 
 \subsection{Other Approaches Considered}
 
-There are many other areas to explore with recommender systems.  Some mentioned in [3], [4], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [2] include simulated annealing.  Indeed, the space of applications is very large and continually growing.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD, which exceeded the time alloted for the assignment.  The Slope-One estimation was more appropriate for linear regressions but not with the implemented system in this paper.  Finally, only the high density region of the dataset was explored.  The paper [7] notes that different approaches might be considered depending on the data density with higher density producing more reliable results.  The results of this project might show an upper bound expected for these types of algorithms. 
+There are many other areas to explore with recommender systems.  Some mentioned in [3], [4], [6], and [7] include Restricted Boltzmann Machines (RBM), Matrix Factorization / Single Value Decomposition (SVD), and Slope-One estimation.  Even more exotic approaches described in [2] include simulated annealing.  Indeed, the space of applications is very large and continually growing.  Computation and limited research time prevented exploration into these areas.  [1] indicates that the Netflix Prize \underline{intermediate} solution took 2000 hours and involved 107 algorithms for RBM and SVD.  This amount of time exceeds the amount alloted for the assignment.  The Slope-One estimation was more appropriate for linear regressions but not with the implemented system in this paper.  Finally, only the high density region of the dataset was explored.  The paper [7] notes that different approaches might be considered depending on the data density with higher density producing more reliable results.  The results of this project might show an upper bound expected for these types of algorithms. 
 
 \section{Plan and Experiment}
 
@@ -126,7 +126,7 @@ There are many other areas to explore with recommender systems.  Some mentioned 
 
 The dataset is comprised of over 100 million ratings of 17,700 movies from 480,189 users.  17,700 text files, one per movie, contain a user id, rating, and date per line in ASCII comma-separated format.  A movie ID value was given on the first line of the file as an integer number.  A separate file gives the movie title for a given ID.  User IDs were arbitrary integers assigned by Netflix that stripped away personally identifying information.  The same ID is used by a user for all movies that they rate.  Ratings are ordinal integer values from 1 to 5, with 1 indicating the worst rating and 5 the best.  Dates are also given in month-day-year format.  
 
-Of the above data, only the movie ID, user ID, and ratings are used in this paper.  No testing sets are provided in the original data and are generated which is described in subsequent section.  Auxilliary programs convert all relevant data into one master file in binary format to conserve on space and load times.  Subsampled data is also in this format.
+Of the above data, only the movie ID, user ID, and ratings are used in this paper.  No testing sets are provided in the original data.  The test sets are generated from the given data through a process described in the experimental section of the paper.  Auxilliary programs convert all relevant data into one master file in binary format to conserve on space and load times.  Subsampled data is also in this format.
 
 \subsection{Hypotheses / Questions}
 
@@ -136,7 +136,7 @@ The examination of the dataset will attempt to answer the follow questions.
 
 \item This paper posits that the ideal $k$ parameter in the $k$ nearest neighbors algorithm will vary significantly between IBCF and UBCF and will need to be greater than at least 5 in either case.  Both CF algorithms can return an arbitrary number of similar users.  Cosine and Pearson similarity return scores in the range of -1 to 1.  Values closer to 1 indicate higher similarity.  Finding the ideal $k$ parameter for $k$ nearest neighbors will govern the overall performance of the algorithm.  
 
-\item Between the similarity metrics this paper expects Pearson similarity to outperform Cosine similarity in all regards.  Pearson similarity is a correlation metric that captures global effects by using the average value of each vector.  This can be viewed as a built-in normalization effect.  Furthermore, Pearson against normalized and untreated data will give similar results.
+\item Between the similarity metrics, this paper expects Pearson similarity to outperform Cosine similarity in all regards.  Pearson similarity is a correlation metric that captures global effects by using the average value of each vector.  This can be viewed as a built-in normalization effect.  Furthermore, Pearson against normalized and untreated data will give similar results.
 
 \item Normalization will offer some benefit to both algorithms over untreated data.  However, the effect should be relatively small.  The ratings space only occupies 5 ordinal values; there is not much space where normalization values can settle.
 
@@ -184,11 +184,11 @@ The examination of the dataset will attempt to answer the follow questions.
 
 \subsection{Experimental Design}
 
-The overall experiment will follow the guidelines for evaluation as set by the Netflix Prize.  A test set (not provided) will query the recommender system which will give a decimal rating for the user based on that user's prior movie ratings.  Error measurements are computed by the root-mean-square-error formula:
+The overall experiment will follow the guidelines for evaluation as set by the Netflix Prize.  A test set (not provided in the original dataset) will query the recommender system which will give a decimal rating for the user based on that user's prior movie ratings.  Error measurements are computed by the root-mean-square-error formula:
 
 $$ RMSE = \sqrt{\frac{\sum_{i=1}^N (\hat{y_i} - y_i)^2}{N}} $$
 
-Unlike linear error methods such as MAE, RMSE penalizes errors more severely.  Accuracy is therefore, at a premium.
+Unlike linear error methods, such as MAE, RMSE penalizes errors more severely.  Accuracy is therefore, at a premium.
 
 Subsamples are generated from the highest top $X$ movies and top $Y$ users in terms of raw number of ratings count.  The subsamples will fill a 5 x 5 matrix of varying $X$ and $Y$ counts.
 
@@ -265,7 +265,7 @@ grid.arrange(p1,p2,padding=10,ncol=2)
 \label{fig:knn}
 \end{figure}
 
-At lower values, $k$ is susceptible to one or two dominating nearest neighbors who may overemphasize certain traits at the expense of others.  In effect, they become outliers.
+At lower values, $k$ is susceptible to one or two dominating neighbors who may overemphasize certain traits at the expense of others.  In effect, they become outliers.
 
 At the higher extreme, the $k$ parameter saturates RMSE scores.  This is because as more neighbors are added the less they becomed differentiated from each other.  Thus, the differences in similarity start offering diminishing returns.  Consider that if all elements are returned into the dataset that the estimated rating would become the overall average rating.  This implies the the $k$ curve will eventually worsen over time rather than incrementally improve.
 
@@ -376,11 +376,11 @@ grid.arrange(p1,p2,padding=10,ncol=2)
 \label{fig:cf_compare_plot}
 \end{figure}
 
-Over all combination of the 25 measurements from the 5 x 5 density matrix overall similarity and normalization techniques can be compared to the baseline.  In the UBCF case, normalization squarely outperforms its untreated counterpart by significant margins.  The Cosine Denormalized metric is worse than even the baseline.  In the IBCF the trend is similar.  Overall normalization offers anywhere from 10\% to 20\% RMSE improvement over the baseline.  This relatively simple technique demonstrates that with even 5 ordinal ratings, enough of a consistent bias exists on a per user basis to justify aligning all data to a common unbiased set of data.  This result was signficant and surprising.
+Over all the combinations of the 25 measurements from the 5 x 5 density matrix, overall similarity and normalization techniques can be compared to the baseline.  In the UBCF case, normalization squarely outperforms its untreated counterpart by significant margins.  The Cosine Denormalized metric is worse than even the baseline.  In the IBCF the trend is similar.  Overall normalization offers anywhere from 10\% to 20\% RMSE improvement over the baseline.  This relatively simple technique demonstrates that with even 5 ordinal ratings, enough of a consistent bias exists on a per user basis to justify aligning all data to a common unbiased axis.  This result was signficant and surprising.
 
 The performance of Pearson versus Cosine Normalized is different for UBCF and IBCF with Cosine prevailing in the former and Pearson in the latter.  The expectation was that Pearson would work best in all conditions.  While the improvment is modest it is consistent throughout the experiment.
 
-This data also answer another question.  Raw high density subsamples match or exceed even the Netflix Prize results.  This is fairly unsurprising as much of the dataset is occupied.
+This data also answer another question.  Raw high density subsamples match or exceed even the Netflix Prize results.  This is fairly unsurprising; few gaps exist in the dataset.
 
 \subsection{Overall Density vs. RMSE}
 
@@ -441,7 +441,7 @@ grid.arrange(p1,padding=10,nrow=1)
 \label{fig:density_plot}
 \end{figure}
 
-In the density table, the results reveal that for densities down to 20\% the top collaborative filtering methods continue to signicantly outperform the baseline metric.  While the appears to be a general trend of worsening results towards the lower densities, the baseline also tracks in this direction.  This indicates that the crossover point is much lower than 20\%, possible in low single digit density regions.  This is a testament to the success of these algorithms, especially where data is well represented.
+For densities down to 20\%, the top collaborative filtering methods continue to signicantly outperform the baseline metric.  While there appears to be a general trend of worsening results towards the lower densities, the baseline also tracks in this direction.  This indicates that the crossover point could be much lower than 20\%, possible in low single digit density regions.  This is a testament to the success of these algorithms, especially where data is well represented.
 
 
 \subsection{IBCF vs. UBCF Results}
@@ -512,21 +512,21 @@ grid.arrange(p1,p2,padding=10,ncol=2)
 \label{fig:ibcf_pn_ubcf_cn_plot}
 \end{figure}
 
-These plots show converging results after movie and user count exceed a certain portion of the subsamples.  The trend would indicate that the IBCF performs better than UBCF for the dataset subsamples.  There is a wide variability at low user count settings for both CF metrics suggesting not enough user information is available when the subsample is low compared to the overall dataset.  This indicates that future experiments should possibly consider some threshold percentage of both data dimensions before results start to stabilize.  Where the results start to converge IBCF appears to outperform UBCF, marginally so.  In this dataset the number of movies is outstripped by the total user count, indicating more useful information is stored in the item-item matrix.
+These plots show converging results after movie and user count exceed a certain portion of the subsamples.  The trend would indicate that the IBCF performs better than UBCF for the dataset subsamples.  There is a wide variability at low user count settings for both CF metrics, suggesting not enough user information is available when a subsample is low as compared to the overall dataset.  This indicates that future experiments should possibly consider some threshold percentage of both data dimensions before results start to stabilize.  Where the results start to converge, IBCF appears to outperform UBCF, marginally so.  A possible explanation is that the number of movies is outstripped by the total user count, indicating more useful information is stored in the item-item matrix.
 
 \subsection{Miscellaneous Results}
 
-In cases where data points were missing so as not to match the knn threshold, the average rating was used instead.  This proved to have insignificant effect on the data.
+In cases where data points were missing (e.g. the k-nn metric was not met), the average rating was used instead.  This proved to have insignificant effect on the data.
 
 For weighted similarities in the item-item matrix, a linear and squared rating appearing to only have a 0.0001 overall RMSE improvement with the squared result slightly favored.
 
 \section{Conclusions}
 
-For high density datasets ($>$ 20\%) both UBCF and IBCF are highly successful in predicting user ratings over the baseline.  The success of these algorithms probably extends much lower, likely into the single digit densities.  This area would be interesting to explore, but time constraints prevent investigation into this area.  Normalization offers outstanding results, in excess of 20\% improvement in RMSE, and should be a crucial part in all collaborative filtering algorithms.  Similarity scoring varies between UBCF versus IBCF and should be measured when investigating any new dataset.  Other similarity metrics should also be considered.  IBCF offers a small 0.05 RMSE advantage for the dataset explored, a trend held throughout all densities.  Finally, isolating ideal $k$ values for nearest neighbors was especially important.  The ideal parameter setting was remarkably consistent across all metrics.
+For high density datasets ($>$ 20\%) both UBCF and IBCF are highly successful in predicting user ratings over the baseline.  The success of these algorithms probably extends much lower, likely into single digit densities.  This area would be interesting to explore, but time constraints prevent investigation into this area.  Normalization offers outstanding results, in excess of 20\% improvement in RMSE, and should be a crucial part in all collaborative filtering algorithms.  Similarity scoring varies between UBCF versus IBCF and should be measured when investigating any new dataset.  Other similarity metrics should also be considered.  IBCF offers a small 0.05 RMSE advantage for the dataset explored, a trend held throughout all densities.  Finally, isolating ideal $k$ values for nearest neighbors was especially important.  The ideal parameter setting was remarkably consistent across all metrics.
 
 One possible future bit of work would be to explore interpolation of missing values in the user-item or item-item matrix.  In this dataset, the item-item matrix gave better results and consumes far less resource.  It might only be feasible when exposed to the full dataset.
 
-Optimizing algorithms proved important for runtimes.  Cache aware data structures reduced run times by over 60\% from less aware approaches, moving run times from 3 to 5 days down to less than 1 day.  Care also must be taken in using built-in data structures offered by a lanaguage.  For example, while STL hashing might be useful in sparse density datasets, a flat matrix in memory for item-item proved a better choice with linear lookup times.  This difference was decisive in choosing between the R {\it recommenderlab} approach or writing custom software.  Another area of development would be to move data structures to GPU memory for GPU processing.  At its core, the algorithms perform a large series of multiply-accumulate instructions which are exactly suited to GPU processing.  The speed-up hear could be remarkable, enabling a far more expansive view of data mining algorithms.
+Optimizing algorithms proved important for runtimes.  Cache aware data structures reduced run times by over 60\% from less aware approaches, moving run times from 3 to 5 days down to less than 1 day.  Care also must be taken in using built-in data structures offered by a lanaguage.  For example, while STL hashing might be useful in sparse density datasets, a flat matrix in memory for item-item proved a better choice with linear lookup times.  This difference was decisive in choosing between the R {\it recommenderlab} approach or writing custom software.  Another area of development would be to move data structures to GPU memory for GPU processing.  At its core, the algorithms perform a large series of multiply-accumulate instructions which are exactly suited to GPU processing.  The speed-up could be remarkable, enabling a far more expansive view of data mining algorithms.
 
 %The formatting instructions contained in these style files are summarized in
 %sections \ref{gen_inst}, \ref{headings}, and \ref{others} below.
