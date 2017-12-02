@@ -208,13 +208,70 @@ For uncovering user and movie dependencies, either parameter will be fixed while
 
 \section{Results}
 
--- KNN GRAPH HERE
+\subsection{K Nearest Neighbor Parameter Search}
+
+<<label=knn,include=FALSE>>=
+library("reshape2")
+library("ggplot2")
+library("gridExtra")
+
+cf_k_table <- read.delim(text="k UBCF_COSINE_DENORMALIZED IBCF_COSINE_DENORMALIZED UBCF_COSINE_NORMALIZED IBCF_COSINE_NORMALIZED UBCF_PEARSON_DENORMALIZED IBCF_PEARSON_DENORMALIZED UBCF_PEARSON_NORMALIZED IBCF_PEARSON_NORMALIZED
+1 1.23655 0.920048 1.11839 0.920048 1.23655 0.920048 1.11839 0.920048
+2 1.10926 1.00381 0.888671 0.905941 0.997885 0.878653 0.98337 0.881869
+3 1.10323 0.987016 0.850719 0.864337 0.953396 0.83077 0.89544 0.833321
+4 1.0765 0.987237 0.817349 0.839805 0.913284 0.810032 0.843541 0.806225
+5 1.04544 0.981972 0.805295 0.821832 0.897593 0.799235 0.829648 0.788883
+6 1.03094 0.978671 0.786088 0.812109 0.875153 0.797812 0.822661 0.777133
+7 1.01337 0.97742 0.779532 0.808517 0.86764 0.790032 0.804924 0.777174
+8 1.00257 0.981971 0.775688 0.80096 0.870702 0.785709 0.798699 0.774489
+9 1.00548 0.978952 0.773115 0.798931 0.86799 0.779873 0.793205 0.767587
+10 1.00712 0.980134 0.774617 0.795652 0.864337 0.776034 0.791223 0.759063
+11 1.01112 0.979088 0.771025 0.792216 0.865305 0.772696 0.783226 0.756642
+12 1.00416 0.977 0.772224 0.787178 0.868169 0.771713 0.775699 0.758621
+13 1.00034 0.977806 0.771314 0.788605 0.863967 0.771328 0.772654 0.757013
+14 0.997866 0.977861 0.769123 0.788509 0.862327 0.767712 0.776436 0.757467
+15 0.994801 0.976343 0.766873 0.787973 0.864196 0.769112 0.779886 0.757156
+16 0.991728 0.97521 0.764871 0.78885 0.862905 0.769519 0.777933 0.759028
+17 0.988238 0.976085 0.763372 0.78805 0.861703 0.771228 0.775126 0.759139
+",as.is=TRUE,sep=" ",header=TRUE)
+
+p1 <- ggplot(cf_k_table, aes(k)) +
+  geom_point(aes(y=UBCF_PEARSON_NORMALIZED, colour = "UBCF\nPEARSON")) +
+  geom_line(aes(y=UBCF_PEARSON_NORMALIZED, colour = "UBCF\nPEARSON"), size=1) +
+  geom_point(aes(y=IBCF_PEARSON_NORMALIZED, colour = "IBCF\nPEARSON")) +
+  geom_line(aes(y=IBCF_PEARSON_NORMALIZED, colour = "IBCF\nPEARSON"), size=1) +
+  labs(y = "RMSE") +
+  theme(panel.background = element_blank())
+
+p2 <- ggplot(cf_k_table, aes(k)) +
+  geom_point(aes(y=UBCF_COSINE_NORMALIZED, colour = "UBCF\nCOSINE")) +
+  geom_line(aes(y=UBCF_COSINE_NORMALIZED, colour = "UBCF\nCOSINE"), size=1) +
+  geom_point(aes(y=IBCF_COSINE_NORMALIZED, colour = "IBCF\nCOSINE")) +
+  geom_line(aes(y=IBCF_COSINE_NORMALIZED, colour = "IBCF\nCOSINE"), size=1) +
+  labs(y = "RMSE") +
+  theme(panel.background = element_blank())
+  #theme(panel.background = element_blank(), legend.position = "none")
+
+grid.arrange(p1,p2,padding=10,ncol=2)
+@
+
+
+\begin{figure}[!ht]
+\begin{center}
+<<knn_plot,ref.label='knn', fig.width=6.0, fig.height=2.0, out.width='.75\\linewidth', echo=FALSE, crop=TRUE>>=
+@
+\end{center}
+\caption{$K$ nearest neighbor parameter search}
+\label{fig:knn}
+\end{figure}
 
 At lower values, $k$ is susceptible to one or two dominating nearest neighbors who may overemphasize certain traits at the expense of others.  In effect, they become outliers.
 
 At the higher extreme, the $k$ parameter saturates RMSE scores.  This is because as more neighbors are added the less they becomed differentiated from each other.  Thus, the differences in similarity start offering diminishing returns.  Consider that if all elements are returned into the dataset that the estimated rating would become the overall average rating.  This implies the the $k$ curve will eventually worsen over time rather than incrementally improve.
 
-Coincidentally, the k-NN reveals that IBCF performs better than UBCF in these density ranges, a fact which holds true over all experiments.  The RMSE margin is a significant 0.02.
+The above graphs are examples of the overall trend in $k$ values.  An adequate location for $k$ appears in the 8 to 12 region.  All remaining experiments set the value to 10.
+
+%Coincidentally, the k-NN reveals that IBCF performs better than UBCF in these density ranges, a fact which holds true over all experiments.  The RMSE margin is a significant 0.02.
 
 -- combined graphs for Pearson/Cosine/Denormalized/Normalized/Baseline per IBCF and UBCF
 
