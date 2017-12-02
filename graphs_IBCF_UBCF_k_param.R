@@ -1,0 +1,29 @@
+library("reshape2")
+library("ggplot2")
+
+cf_k_table <- read.delim(text="
+k RMSE_UBCF_COSINE_NORM RMSE_IBCF_COSINE_NORM
+1 1.11839 0.920048
+2 0.888671 0.905941
+3 0.850719 0.864337
+4 0.817349 0.839805
+5 0.805295 0.821832
+6 0.786088 0.812109
+7 0.779532 0.808517
+8 0.775688 0.80096
+9 0.773115 0.798931
+10 0.774617 0.795652
+11 0.771025 0.792216
+12 0.772224 0.787178
+13 0.771314 0.788605
+14 0.769123 0.788509
+15 0.766873 0.787973
+16 0.764871 0.78885
+17 0.763372 0.78805
+",as.is=TRUE,sep=" ",header=TRUE)
+
+
+mdf <- melt(cf_k_table, id="k")
+ggplot(data=mdf,
+       aes(x=k, y=value, colour=variable)) +
+  geom_line()

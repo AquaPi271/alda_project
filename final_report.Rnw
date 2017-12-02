@@ -2,6 +2,8 @@
 \usepackage{nips15submit_e,times}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{booktabs}
+\usepackage{multirow}
 
 %\documentstyle[nips14submit_09,times,art10]{article} % For LaTeX 2.09
 
@@ -122,86 +124,97 @@ There are many other areas to explore with recommender systems.  Some mentioned 
 
 \subsection{Dataset}
 
-The dataset is comprised of over 100 million ratings of 17,700 movies from 480,000 users.  17,700 text files, one per movie, contain a user id, rating, and date per line in ASCII comma-separated format.  A movie ID value was given on the first line of the file as an integer number.  A separate file gives the movie title for a given ID.  User IDs were arbitrary integers assigned by Netflix that stripped away personally identifying information.  The same ID is used by a user for all movies that they rate.  Ratings are ordinal integer values from 1 to 5, with 1 indicating the worst rating and 5 the best.  Dates are also given in month-day-year format.  
+The dataset is comprised of over 100 million ratings of 17,700 movies from 480,189 users.  17,700 text files, one per movie, contain a user id, rating, and date per line in ASCII comma-separated format.  A movie ID value was given on the first line of the file as an integer number.  A separate file gives the movie title for a given ID.  User IDs were arbitrary integers assigned by Netflix that stripped away personally identifying information.  The same ID is used by a user for all movies that they rate.  Ratings are ordinal integer values from 1 to 5, with 1 indicating the worst rating and 5 the best.  Dates are also given in month-day-year format.  
 
-The overall experiment will follow the guidelines for evaluation as set by Netflix.  A test set (not provided) will query the recommender system which will give a decimal rating for the user based on that user's prior movie ratings.  Netflix secretly held the actual rating given by the user.  Errors will be tabulated using the root-mean-square-error formula:
-
-$$ RMSE = \sqrt{\frac{\sum_{i=1}^N (\hat{y_i} - y_i)^2}{N}} $$
-
--- Dataset overall description, explain how subsample density sets are generated
-
--- RMSE evaluation, chosen by Netflix over linear error methods, such as MAE, to make the penalty of errors be more pronounced.  Emphasizes accuracy.
-
--- Baseline is average ratings for each movie over the entire training set.  This is the standard used by the papers written for CF and for the Netflix Prize.  It is reasonable because these papers note at how well it works, even when some methods begin failing.
+Of the above data, only the movie ID, user ID, and ratings are used in this paper.  No testing sets are provided in the original data and are generated which is described in subsequent section.  Auxilliary programs convert all relevant data into one master file in binary format to conserve on space and load times.  Subsampled data is also in this format.
 
 \subsection{Hypotheses / Questions}
 
 The examination of the dataset will attempt to answer the follow questions.
 
-This paper posits that the ideal $k$ parameter in the $k$ nearest neighbors algorithm will vary significantly between IBCF and UBCF and will need to be greater than at least 5 in either case.  Both CF algorithms can return an arbitrary number of similar users.  Cosine and Pearson similarity return scores in the range of -1 to 1.  Values closer to 1 indicate higher similarity.  Finding the ideal $k$ parameter for $k$ nearest neighbors will govern the overall performance of the algorithm.  
+\begin{itemize}
 
-Between the similarity metrics this paper expects Pearson similarity to outperform Cosine similarity in all regards.  Pearson similarity is a correlation metric that captures global effects by using the average value of each vector.  This can be viewed as a built-in normalization effect.  Furthermore, Pearson against normalized and untreated data will give similar results.
+\item This paper posits that the ideal $k$ parameter in the $k$ nearest neighbors algorithm will vary significantly between IBCF and UBCF and will need to be greater than at least 5 in either case.  Both CF algorithms can return an arbitrary number of similar users.  Cosine and Pearson similarity return scores in the range of -1 to 1.  Values closer to 1 indicate higher similarity.  Finding the ideal $k$ parameter for $k$ nearest neighbors will govern the overall performance of the algorithm.  
 
-Normalization will offer some benefit to both algorithms over untreated data.  However, the effect should be relatively small.  The ratings space only occupies 5 ordinal values; there is not much space where normalization values can settle.
+\item Between the similarity metrics this paper expects Pearson similarity to outperform Cosine similarity in all regards.  Pearson similarity is a correlation metric that captures global effects by using the average value of each vector.  This can be viewed as a built-in normalization effect.  Furthermore, Pearson against normalized and untreated data will give similar results.
 
-High density data will yield subperb results for UBCF and IBCF with RMSE results on par with the Netflix Prize winners results (0.8650 RMSE) on the overall dataset.  These are the best conditions for such data.  However, a cross-over point will be observed where average RMSE will beat these metrics.  A simple test against a low density sample showed that RMSE scored 1.05 while the other methods ranged from 1.20 to 1.32 RMSE.  A cross-over point might occur in the 30 \% density region where the results could deteriorate.
+\item Normalization will offer some benefit to both algorithms over untreated data.  However, the effect should be relatively small.  The ratings space only occupies 5 ordinal values; there is not much space where normalization values can settle.
 
-User based collaborative filtering will work better than item based collaborative filtering.  This is just a guess.  It will be interesting to see which method produces better results.
+\item High density data will yield superb results for UBCF and IBCF with RMSE results on par with the Netflix Prize winners results (0.8650 RMSE) on the overall dataset.  These are the best conditions for such data.  However, a cross-over point will be observed where average RMSE will beat these metrics.  A simple test against a low density sample showed that RMSE scored 1.05 while the other methods ranged from 1.20 to 1.32 RMSE.  A cross-over point might occur in the 30 \% density region where the results could deteriorate.
 
-The relationship for a fixed number of movies and users in a subsample may reveal where each trend will hit their respective cross-over points as compared to the baseline metric.  Essentially, this question expects an inverse linear relationship between RMSE per density.
+\item User based collaborative filtering will work better than item based collaborative filtering.  This is just a guess.  It will be interesting to see which method produces better results.
 
+\item The relationship for a fixed number of movies and users in a subsample may reveal where each trend will hit their respective cross-over points as compared to the baseline metric.  Essentially, this question expects an inverse linear relationship between RMSE per density.
+
+\end{itemize}
+
+
+% \begin{table}[t]
+% \caption{Sample table title}
+% \label{sample-table}
+% \begin{center}
+% \begin{tabular}{ll}
+% \multicolumn{1}{c}{\bf PART}  &\multicolumn{1}{c}{\bf DESCRIPTION}
+% \\ \hline \\
+% Dendrite         &Input terminal \\
+% Axon             &Output terminal \\
+% Soma             &Cell body (contains cell nucleus) \\
+% \end{tabular}
+% \end{center}
+% \end{table}
+
+
+%\begin{table}[ht]
+%\caption{Movie vs. user count subsample densities}
+%\label{density-table-label}
+%\begin{center}
+%\begin{tabular}{cp{1cm}cccccc}
+%\hline
+%& & \multicolumn{5}{l}{User count}\\
+%\hline
+%\multirow{5}{*}{Movie count} & 500   & 1500  & 2500  & 3500  & 4500  \\ \hline
+%1000 & 0.851 & 0.794 & 0.763 & 0.741 & 0.723 \\ \hline
+%3000         & 0.624 & 0.541 & 0.502 & 0.476 & 0.456 \\ \hline
+%5000         & 0.491 & 0.405 & 0.368 & 0.344 & 0.327 \\ \hline
+%7000         & 0.401 & 0.320 & 0.287 & 0.267 & 0.252 \\ \hline
+%9000         & 0.338 & 0.263 & 0.234 & 0.217 & 0.204 \\ \hline
+%\end{tabular}
+%\end{center}
+%\end{table}
 
 \subsection{Experimental Design}
 
-\begin{table}[]
-\centering
-\caption{Movie vs. User Count High Density Subsamples}
-\label{density-table-label}
-\begin{tabular}{|l|l|l|l|l|l|}
-\hline
-M / U & 500   & 1500  & 2500  & 3500  & 4500  \\ \hline
-1000         & 0.851 & 0.794 & 0.763 & 0.741 & 0.723 \\ \hline
-3000         & 0.624 & 0.541 & 0.502 & 0.476 & 0.456 \\ \hline
-5000         & 0.491 & 0.405 & 0.368 & 0.344 & 0.327 \\ \hline
-7000         & 0.401 & 0.320 & 0.287 & 0.267 & 0.252 \\ \hline
-9000         & 0.338 & 0.263 & 0.234 & 0.217 & 0.204 \\ \hline
-\end{tabular}
-\end{table}
+The overall experiment will follow the guidelines for evaluation as set by the Netflix Prize.  A test set (not provided) will query the recommender system which will give a decimal rating for the user based on that user's prior movie ratings.  Error measurements are computed by the root-mean-square-error formula:
 
--- Random number generator, repeatability
+$$ RMSE = \sqrt{\frac{\sum_{i=1}^N (\hat{y_i} - y_i)^2}{N}} $$
 
--- 10-fold cross validation
+Unlike linear error methods such as MAE, RMSE penalizes errors more severely.  Accuracy is therefore, at a premium.
 
--- Tests generated in a fold by randomly removing a rating for a test user.  The rating was withheld from the CF algorithms and used in the RMSE calculations.
+Subsamples are generated from the highest top $X$ movies and top $Y$ users in terms of raw number of ratings count.  The subsamples will fill a 5 x 5 matrix of varying $X$ and $Y$ counts.
 
--- Subsampled dataset picked movies and users by number of ratings counts.
+From each subsample, 10-fold cross validation is performed.  For the testing portion of a fold, a test subject will randomly have a rating stripped from the test set.  The rating will be stored separately for later RMSE computation against that user's predicted value. 
 
--- Density matrix established:  Show chart of Top User x Top Movie with density filled in
+Randomness will be controlled through C++11's uniform random number generator with seedings recorded for reproducibility.
 
--- The first experiment will determine which k-NN is the best setting for each combination of input.  Results will be computed against the M1500\_U500 subsample with further subsamples depending on results.  The $k$ parameter will vary from 1 to 20 (or more or less) to find a maximized setting.  The results of these experiments will then set the k-value for all subsequent tests.
+The baseline metric will always be the average rating for a movie over the entire training set.  This baseline is used by all citations that analyze Netflix Prize recommender system algorithms.  
 
--- The remaining experiments will use the 5x5 set of high density subsamples found in table (entry here).  Cosine and Pearson will be applied across all IBCF / UBCF for RMSE evaluation.
+The first $k$ nearest-neighbor experiment will determine the $k$ parameter to be used in all subsequent experiments.  All combinations similarity metric, CF algorithm, and normalization will be used to find which best $k$ value to use per setting.  The results will be computed against the (Movie = 1500 x User = 500) subsample with $k$ being the independent variable.
 
--- Normalization settings will be added to the prior settings to their effects.  Normalization occurs in the similarity matrix construction and similarity evaluation in both CF settings.  It is also used to denormalize a user's bias un UBCF.
+The remaining experiments will use the entire 5 x 5 set of high density subsamples and observe the $k$ parameter discovered above.  Comparisons are between: Cosine and Pearson . Normalize and Untreated Data, and UBCF versus IBCF.
 
--- U and M parameters held while other parameter varies to uncover where IBCF and UBCF excel or underperform.
+For uncovering user and movie dependencies, either parameter will be fixed while the other varies. 
 
--- Across all experiments IBCF and UBCF compared.
-
-
-
-%While the data are considered clean by Netflix, it is enormous, occupying over 1.5 GB of space on 17700 separate text files.  Exploration of the space revealed that for many of the functions in {\it recommenderlab}, the memory constraints were insufficient to hold the data.  To get around this issue, a computer program was developed to sample recommendations from the overall merged dataset.  Parameters given include the number of users, number of movies, and random seed.  The program runs in two passes.  The first pass collects all of the users from the randomly chosen movies.  From this user list, random users are chosen up to the input parameter.  A file is then produced with these sampled selections.  The file is passed to another program which measures bulk statistics to ensure ratings follow a similar distribution as the overall dataset.  Additional user metrics are compared to ensure the number of user ratings scales with the diminished movie count.
-%
-%From the sampled data set, RMSE will be computed with k=10 cross-validations (k value subject to change pending on runtime) against each global recommender method.  This procedure will be replicated across all valid sample set and serves as a replacement of Netflix's hidden testset.
-%
-%A first priority is to establish rankings based on bulk metrics through average ratings.  This is the starting point for the Netflix prize contributions.  This technique yields 1.05475 RMSE, similar to other contestant's findings.
-%
-%From here IBCF and UBCF models will be explored.  Parameters considered will be number of nearest neighbors (k-NN value), similarity metric (cosine vs. Pearson), normalization, recency of ratings, and blending of global movie parameters for sparse queries[3].  Time permitting, the Slope-one method of estimation will be explored.  If possible, a hybrid model will be constructed that blends various combinations of the above into an overall model.  Each technique is briefly discussed.
 %
 
 \section{Results}
 
--- knn graph of results with values chosen in the experiments, also shows IBCF better than UBCF
+-- KNN GRAPH HERE
+
+At lower values, $k$ is susceptible to one or two dominating nearest neighbors who may overemphasize certain traits at the expense of others.  In effect, they become outliers.
+
+At the higher extreme, the $k$ parameter saturates RMSE scores.  This is because as more neighbors are added the less they becomed differentiated from each other.  Thus, the differences in similarity start offering diminishing returns.  Consider that if all elements are returned into the dataset that the estimated rating would become the overall average rating.  This implies the the $k$ curve will eventually worsen over time rather than incrementally improve.
+
+Coincidentally, the k-NN reveals that IBCF performs better than UBCF in these density ranges, a fact which holds true over all experiments.  The RMSE margin is a significant 0.02.
 
 -- combined graphs for Pearson/Cosine/Denormalized/Normalized/Baseline per IBCF and UBCF
 
